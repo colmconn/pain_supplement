@@ -223,13 +223,13 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
     ee=1
     for ff in ${epiFiles[$rr]} ; do
 
-	if [[ ${ee} == 1 ]] ; then
-	    # 3dBrickStat returns two numbers. The first is the
-	    # requested percentile and the second is the value of that
-	    # percentile in the dataset ${ff}
-	    echo_one_min=( $( 3dBrickStat -slow -percentile  2 1  2 ${ff}'[0]' 2> /dev/null ) )
-	    echo_one_max=( $( 3dBrickStat -slow -percentile 98 1 98 ${ff}'[0]' 2> /dev/null ) )	    
-	fi
+	# if [[ ${ee} == 1 ]] ; then
+	#     # 3dBrickStat returns two numbers. The first is the
+	#     # requested percentile and the second is the value of that
+	#     # percentile in the dataset ${ff}
+	#     echo_one_min=( $( 3dBrickStat -slow -percentile  2 1  2 ${ff}'[0]' 2> /dev/null ) )
+	#     echo_one_max=( $( 3dBrickStat -slow -percentile 98 1 98 ${ff}'[0]' 2> /dev/null ) )	    
+	# fi
        
 	info_message_ln "Making images for the following EPI file"
 	info_message_ln "[RR][EE]: EE=echo RR=run"
