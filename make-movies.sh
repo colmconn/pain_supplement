@@ -236,8 +236,6 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 	msg=$( printf '[%02d][%02d]: %s\n' $(( rr + 1)) ${ee} "${ff}" )
 	info_message_ln "${msg}"
 
-	cat <<EOF
-
 	 afni -q ${NPB} -noplugins -no_detach -yesplugouts  \
 	     -com "SWITCH_UNDERLAY ${ff}" \
 	     -com "OPEN_WINDOW A.axialimage    opacity=9" \
@@ -245,7 +243,6 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 	     -com "OPEN_WINDOW A.coronalimage  opacity=9" \
 	     -com "SET_XHAIRS OFF" & ## 2> /dev/null &
 	sleep 5
-EOF
 	
 	## nTimesteps=$( env AFNI_NO_OBLIQUE_WARNING=YES 3dnvals ${ff} )
 	nTimesteps=5
@@ -277,8 +274,6 @@ EOF
 
 	    ## -com "SET_ULAY_RANGE A.all ${echo_one_min[1]} ${echo_one_max[1]}"  \
 
-	    cat <<EOF
-
 	    plugout_drive ${NPB} \
 			  -com "SET_SUB_BRICKS ${index} -1 -1"                               \
 			  -com "SAVE_JPEG A.axialimage    ${IMAGES_DIR}/${imageFilenameAx}"  \
@@ -303,14 +298,11 @@ EOF
 		    -background white label:"Echo ${ee}" \
 		    -gravity Center \
 		    -append ${IMAGES_DIR}/${imageFilenameCor%%.jpg}_lrg.png
-EOF
 
 	done
-	cat <<EOF
 	plugout_drive ${NPB} \
 		      -com 'QUITT' \
 		      -quit
-EOF
 
 	(( ee=ee+1 ))
     done
