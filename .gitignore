@@ -1,0 +1,30 @@
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+##backup files
+*~*
+
+# R related files
+######################
+.Rhistory
+.Rapp.history
+.RData
+
+#####################
+run
+regressors
+seeds
+test_code
+
+## ignore automatically generated t test script files
+04-ttest.withCovariates.*.sh
+
+## files created by check-processing-progress.sh
+processing-progress-*
