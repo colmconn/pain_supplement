@@ -1,0 +1,181 @@
+{
+    "descriptions": [
+	
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-rest_echo-1",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "EchoNumber": "1"
+	},
+	"sidecarChanges": {
+	    "TaskName": "rest"
+	}
+    },
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-rest_echo-2",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "EchoNumber": "2"
+	},
+	"sidecarChanges": {
+	    "TaskName": "rest"
+	}
+    },
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-rest_echo-3",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "EchoNumber": "3"
+	},
+	"sidecarChanges": {
+	    "TaskName": "rest"
+	}
+    },
+
+
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-tapping_run-1_echo-1",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
+	    "EchoNumber": "1"
+	},
+	"sidecarChanges": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-tapping_run-1_echo-2",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
+	    "EchoNumber": "2"
+	},
+	"sidecarChanges": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-tapping_run-1_echo-3",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
+	    "EchoNumber": "3"
+	},
+	"sidecarChanges": {
+	    "TaskName": "tapping"
+	}
+    },
+
+
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-tapping_run-2_echo-1",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
+	    "EchoNumber": "1"
+	},
+	"sidecarChanges": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-tapping_run-2_echo-2",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
+	    "EchoNumber": "2"
+	},
+	"sidecarChanges": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"dataType": "func",
+	"modalityLabel": "bold",
+	"customLabels": "task-tapping_run-2_echo-3",
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
+	    "EchoNumber": "3"
+	},
+	"sidecarChanges": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"dataType": "fmap",
+	"modalityLabel": "magnitude1",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"],
+	    "EchoNumber": "1"
+	}
+    },
+	{
+	"dataType": "fmap",
+	"modalityLabel": "magnitude2",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"],
+	    "EchoNumber": "2"
+	}
+    },
+
+	{
+	"dataType": "fmap",
+	"modalityLabel": "phasediff",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "P", "ND", "PHASE"]
+	}
+    },
+	
+	{
+	"dataType": "anat",
+	"modalityLabel": "T1w",
+	"customLabels": "rec-prescannorm",
+	"criteria": {
+	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
+	    "ImageType": [ "ORIGINAL", "PRIMARY", "M", "ND", "NORM", "FM5", "5", "FIL" ]
+	},
+	"sidecarChanges": {
+	    "ProtocolName": "T1"
+	}	
+    },
+	{
+	"dataType": "anat",
+	"modalityLabel": "T1w",
+	"customLabels": "rec-noprescannorm",
+	"criteria": {
+	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
+	    "ImageType": [ "ORIGINAL", "PRIMARY", "M", "ND" ]
+	},
+	"sidecarChanges": {
+	    "ProtocolName": "T1"
+	}	
+    },
+	{
+	"dataType": "anat",
+	"modalityLabel": "T2w",
+	"criteria": {
+	    "SeriesDescription": "t2_space_sag_p4_iso*"
+	},
+	"sidecarChanges": {
+	    "ProtocolName": "T2"
+	}	
+	
+    }
+	
+    ]
+}
