@@ -19,7 +19,7 @@ for ss in ../rawdata/sub-[0-9][0-9][0-9]/ses-{baseline,followup} ; do
     ## echo ${session}
 
     info_message_ln "Extracting ratings for sub-${subject}/ses-${session}"
-    ./extract-pain-ratings.r -l '../rawdata/sub-${subject}/ses-${session}/beh/*/*.log' \
+    ./extract-pain-ratings.r -l "../rawdata/sub-${subject}/ses-${session}"'/beh/*/*.log' \
     			     -o ../derivative/pain_ratings \
     			     -s ${subject} \
      			     -e ${session}
