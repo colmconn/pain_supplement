@@ -161,7 +161,9 @@ process.log.file <- function(in.opt) {
                 info.message(sprintf("[%02d] Got task        : %s", run, task))
                 info.message(sprintf("[%02d] Got pain rating : %s", run, rating))
 
-                regressor.list[[run]] = c("subject"=subject, "session"=ifelse(session != in.opt$session, in.opt$session, session), "task"=task, "run"=as.integer(lf.run), "pain_rating"=as.integer(rating))
+                regressor.list[[run]] = c("subject"=subject,
+                                          "session"=gsub("ses-", "", ifelse(session != in.opt$session, in.opt$session, session), fixed=TRUE),
+                                          "task"=task, "run"=as.integer(lf.run), "pain_rating"=as.integer(rating))
                 next
             }
         } ## end of while (length(line <- readLines(logfile.con, n = 1, warn = FALSE)) > 0)
