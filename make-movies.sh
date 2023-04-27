@@ -190,7 +190,6 @@ nruns=${#epiFiles[@]} #=$( echo  ${epiFiles[1]} | wc -w )
 
 ####################################################################################################
 
-
 export AFNI_LAYOUT_FILE=elvis
 # GUI settings for simplicity
 # taken from @chauffeur_afni
@@ -237,7 +236,7 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
     ## printf '[%02d]: %s\n' ${ee} "${epiFiles[$ee]}"
     ## ee=1
     for ff in ${epiFiles[$rr]} ; do
-	ee=$( echo ${ef} | awk -F"_" '{print $5}' | awk -F'-' '{print $2}' )
+	ee=$( echo ${ff} | awk -F"_" '{print $6}' | awk -F'-' '{print $2}' )
 	# if [[ ${ee} == 1 ]] ; then
 	#     # 3dBrickStat returns two numbers. The first is the
 	#     # requested percentile and the second is the value of that
@@ -260,7 +259,7 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 	sleep 5
 	
 	nTimesteps=$( env AFNI_NO_OBLIQUE_WARNING=YES 3dnvals ${ff} )
-	## nTimesteps=5
+	# nTimesteps=5
 
 	# -com "SWITCH_OVERLAY  sub-${subjectId}_task-noboot_gre+orig.HEAD" \
 	    # -com "SET_PBAR_ALL -99 1.0 gray_circle" \
@@ -300,19 +299,19 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 		    -font ${FONT_FAMILY} \
 		    -background white label:"Echo ${ee}" \
 		    -gravity Center \
-		    -append ${IMAGES_DIR}/${imageFilenameAx%%.jpg}_lrg.png
+		    -append ${IMAGES_DIR}/${imageFilenameAx}
 	    convert ${IMAGES_DIR}/${imageFilenameSag} \
 		    -resize 400% \
 		    -font ${FONT_FAMILY} \
 		    -background white label:"Echo ${ee}" \
 		    -gravity Center \
-		    -append ${IMAGES_DIR}/${imageFilenameSag%%.jpg}_lrg.png
+		    -append ${IMAGES_DIR}/${imageFilenameSag}
 	    convert ${IMAGES_DIR}/${imageFilenameCor} \
 		    -resize 400% \
 		    -font ${FONT_FAMILY} \
 		    -background white label:"Echo ${ee}" \
 		    -gravity Center \
-		    -append ${IMAGES_DIR}/${imageFilenameCor%%.jpg}_lrg.png
+		    -append ${IMAGES_DIR}/${imageFilenameCor}
 
 	done
 	plugout_drive ${NPB} \
@@ -331,7 +330,6 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 done
 #fi
 
-if [[ 1 == 1 ]] ; then 
 cd ${IMAGES_DIR}
 for ori in ax cor sag; do
     for (( rr=0; rr < ${nruns}; rr++ )) ; do
@@ -344,10 +342,10 @@ for ori in ax cor sag; do
 	imagePatternPrefix="${subject}_${session}_task-${task}_run-${run}_orient-${ori}"
 	if [[ -z ${use_echo} ]] ; then 
 	    for (( ee=1; ee <= ${nechos}; ee++ )) ; do
-		ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${ee}_orient-${ori}_img-%04d_bold_lrg.png"
+		ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${ee}_orient-${ori}_img-%04d_bold.jpg"
 	    done
 	else
-	    ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${use_echo}_orient-${ori}_img-%04d_bold_lrg.png"
+	    ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${use_echo}_orient-${ori}_img-%04d_bold.jpg"
 	fi
 
 	if [[ -z ${use_echo} ]] ; then
@@ -365,10 +363,12 @@ for ori in ax cor sag; do
 		${ffmpegInputs[*]} ${filter_complex} \
 		-metadata:g artist="Colm G. Connolly" -metadata:g title="${imagePatternPrefix} Movie" \
 		-metadata:g year="$( date +'%Y')" -metadata:g comment="Ahn R01 Pain Supplement Subject EPI Movie" \
-		-c:v libx264 -pix_fmt yuv420p -r 10 ../${imagePatternPrefix}_bold_lrg.mp4
+		-c:v libx264 -pix_fmt yuv420p -r 10 ../${imagePatternPrefix}_bold.mp4
     done
 done
-fi
+
+cd ../
+rm -fr ${IMAGES_DIR}
 
 info_message_ln "Killing Xvfb process is: ${xvfb_pid}"
 kill -9 ${xvfb_pid}
