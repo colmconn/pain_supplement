@@ -34,7 +34,7 @@ subjects=( $( cd ${RAW_DATA} ; find  ./ -maxdepth 1 -name 'sub-[0-9][0-9][0-9]' 
 ## subjects=( sub-105 )
 
 progress_file=processing-progress-$( date +"%Y%m%d" ).csv
-echo "subject,session,raw_dir,source_t1,source_t2,rest_echo1,rest_echo2,rest_echo3,task_run1_echo1,task_run1_echo2,task_run1_echo3,task_run2_echo1,task_run2_echo2,task_run2_echo3,freesurfer,afni_anat,afni_rest,afni_task" > ${progress_file}
+echo "subject,session,raw_dir,source_t1,source_t2,rest_echo1,rest_echo2,rest_echo3,task_run1_echo1,task_run1_echo2,task_run1_echo3,task_run2_echo1,task_run2_echo2,task_run2_echo3,freesurfer,afni_anat,afni_rest,afni_task,rest_mot_excld,task_mot_excld" > ${progress_file}
 
 for ss in ${subjects[*]} ; do
     subject=${ss##./}
@@ -50,6 +50,8 @@ for ss in ${subjects[*]} ; do
 	afni_anat="FALSE"
 	afni_rest="FALSE"
 	afni_task="FALSE"
+	rest_mot_excld="FALSE"
+	task_mot_excld="FALSE"
 	
 	session="ses-${ses}"
 	ss=${subject}/${session}
@@ -108,8 +110,17 @@ for ss in ${subjects[*]} ; do
 	if [[ -f ${DERIVATIVE_DATA}/afni-task-tapping/${ss}/task-tapping-preprocessed-polortA-NL/stats.${subject}_${session}_REML+tlrc.HEAD ]] ; then
 	    afni_task="TRUE"
 	fi
+
+	# check for too much motion in functional datasets
+	if [[ -f ${DERIVATIVE_DATA}/afni-resting-state/${ss}/resting-state-preprocessed-polortA-NL/00_DO_NOT_ANALYSE_${subject}_${session}_20percent.txt ]] ; then
+	    rest_mot_excld="TRUE"
+	fi
+
+	if [[ -f ${DERIVATIVE_DATA}/afni-task-tapping/${ss}/task-tapping-preprocessed-polortA-NL/00_DO_NOT_ANALYSE_${subject}_${session}_20percent.txt ]] ; then
+	    task_mot_excld="TRUE"
+	fi
 	
-	echo "${subject},${session},${raw_dir},${recon_t1},${recon_t2},$( printf "%s," ${recon_rest[*]} )$(printf "%s," ${recon_task_run1[*]})$(printf "%s," ${recon_task_run2[*]})${freesurfer},${afni_anat},${afni_rest},${afni_task}" >> ${progress_file}
+	echo "${subject},${session},${raw_dir},${recon_t1},${recon_t2},$( printf "%s," ${recon_rest[*]} )$(printf "%s," ${recon_task_run1[*]})$(printf "%s," ${recon_task_run2[*]})${freesurfer},${afni_anat},${afni_rest},${afni_task},${rest_mot_excld},${task_mot_excld}" >> ${progress_file}
 
     done
 done
