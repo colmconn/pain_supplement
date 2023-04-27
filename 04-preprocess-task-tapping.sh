@@ -2,7 +2,7 @@
 
 # set -x
 
-#exit immediatly on an error
+#exit immediately on an error
 set -e 
 
 trap exit SIGHUP SIGINT SIGTERM
