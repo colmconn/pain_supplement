@@ -49,8 +49,8 @@ XVFB_OPTIONS="-nolisten tcp"
 # this is for the command line options; on mac would have to have gnu
 # get opt installed; probably in macports, definitely in homebrew"
 GETOPT_OPTIONS=$( $GETOPT \
-		      -o "c:e:r:s:t:" \
-		      --longoptions "nechos:,runs:,session:,subject:,task:" \
+		      -o "c:e:r:s:t:u:" \
+		      --longoptions "nechos:,runs:,session:,subject:,task:,use_echo:" \
 		      -n ${PROGRAM_NAME} -- "$@" )
 #exitStatus of getopt, getopt returns zero if had no parsing errors on
 #command line
@@ -79,6 +79,8 @@ while true ; do
 	    subject=${2}; shift 2 ;;
 	-t|--task)
 	    task=${2}; shift 2 ;;
+	-u|use_echo)
+	    use_echo=${2}; shift 2;;
 	--) 
 	    shift ; break ;;
 	
@@ -101,6 +103,12 @@ fi
 if [ -z ${task} ] ; then 
     error_message_ln "ERROR: The task name was not provided."
     exit
+fi
+
+if [[ ! -z ${nechos} ]] ; then
+    if [[ ! -z ${use_echo} ]] ; then
+	info_message_ln "Using echo ${use_echo} of multi-echo dataset for movies"
+    fi
 fi
 
 if [[ ${session:0:4} != "ses-" ]] ; then
@@ -150,12 +158,19 @@ declare -a epiFiles
 for (( rr=0; rr < ${#sourceEpiFiles[@]}; rr++ )) ; do
     ff=${sourceEpiFiles[${rr}]} ## one or more echo files per run
     for ef in ${ff} ; do
+	ec=$( echo ${ef} | awk -F"_" '{print $5}' | awk -F'-' '{print $2}' )
 	if [[ ! -f ${unprocessedDataDir}/$ef ]] ; then
 	    warn_message_ln "No such file: $ef"
 	    warn_message_ln "Cannot find one of the ${task} EPI files for ${ss}. Skipping subject."
 	    continue
 	else
-	    epiFiles[$rr]="${epiFiles[$rr]} ${unprocessedDataDir}/${ef}"
+	    if [[ ! -z ${use_echo} ]] ; then
+		if [[ ${ec} == ${use_echo} ]] ; then 
+		    epiFiles[$rr]="${epiFiles[$rr]} ${unprocessedDataDir}/${ef}"
+		fi
+	    else
+		epiFiles[$rr]="${epiFiles[$rr]} ${unprocessedDataDir}/${ef}"
+	    fi
 	fi
     done
 done
@@ -220,9 +235,9 @@ export DISPLAY
 
 for (( rr=0; rr < ${nruns}; rr++ )) ; do
     ## printf '[%02d]: %s\n' ${ee} "${epiFiles[$ee]}"
-    ee=1
+    ## ee=1
     for ff in ${epiFiles[$rr]} ; do
-
+	ee=$( echo ${ef} | awk -F"_" '{print $5}' | awk -F'-' '{print $2}' )
 	# if [[ ${ee} == 1 ]] ; then
 	#     # 3dBrickStat returns two numbers. The first is the
 	#     # requested percentile and the second is the value of that
@@ -244,8 +259,8 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 	     -com "SET_XHAIRS OFF" & ## 2> /dev/null &
 	sleep 5
 	
-	## nTimesteps=$( env AFNI_NO_OBLIQUE_WARNING=YES 3dnvals ${ff} )
-	nTimesteps=5
+	nTimesteps=$( env AFNI_NO_OBLIQUE_WARNING=YES 3dnvals ${ff} )
+	## nTimesteps=5
 
 	# -com "SWITCH_OVERLAY  sub-${subjectId}_task-noboot_gre+orig.HEAD" \
 	    # -com "SET_PBAR_ALL -99 1.0 gray_circle" \
@@ -304,7 +319,7 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 		      -com 'QUITT' \
 		      -quit
 
-	(( ee=ee+1 ))
+	## (( ee=ee+1 ))
     done
     # for index in $( seq 0 $(( nTimesteps -1 )) ) ; do
     # 	indexFormatted=$( printf %04d ${index} )
@@ -316,7 +331,7 @@ for (( rr=0; rr < ${nruns}; rr++ )) ; do
 done
 #fi
 
-if [[ 1 == 0 ]] ; then 
+if [[ 1 == 1 ]] ; then 
 cd ${IMAGES_DIR}
 for ori in ax cor sag; do
     for (( rr=0; rr < ${nruns}; rr++ )) ; do
@@ -327,19 +342,27 @@ for ori in ax cor sag; do
 	msg=$( printf '[%02d]: Orientation: %s\n' ${run} "${ori}" )
 	info_message_ln "${msg}"
 	imagePatternPrefix="${subject}_${session}_task-${task}_run-${run}_orient-${ori}"
-	for (( ee=1; ee <= ${nechos}; ee++ )) ; do
-	    ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${ee}_orient-${ori}_img-%04d_bold_lrg.png"
-	done
+	if [[ -z ${use_echo} ]] ; then 
+	    for (( ee=1; ee <= ${nechos}; ee++ )) ; do
+		ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${ee}_orient-${ori}_img-%04d_bold_lrg.png"
+	    done
+	else
+	    ffmpegInputs[$ee]="-pattern_type sequence -start_number 0 -framerate 10 -i ${subject}_${session}_task-${task}_run-${run}_echo-${use_echo}_orient-${ori}_img-%04d_bold_lrg.png"
+	fi
 
-	fil=""
-	for (( ee =0; ee < ${nechos}; ee++ )) ; do
-	    fil="${fil}[${ee}:v]"
-	done
+	if [[ -z ${use_echo} ]] ; then
+	    fil=""
+	    for (( ee =0; ee < ${nechos}; ee++ )) ; do
+		fil="${fil}[${ee}:v]"
+	    done
+	    filter_complex="-filter_complex \"${fil}hstack=inputs=${nechos}\""
+	else
+	    filter_complex=""
+	fi
 	
 	## echo "${ffmpegInputs[*]}"
 	ffmpeg  -loglevel debug -y  \
-		${ffmpegInputs[*]} \
-		-filter_complex "${fil}hstack=inputs=${nechos}" \
+		${ffmpegInputs[*]} ${filter_complex} \
 		-metadata:g artist="Colm G. Connolly" -metadata:g title="${imagePatternPrefix} Movie" \
 		-metadata:g year="$( date +'%Y')" -metadata:g comment="Ahn R01 Pain Supplement Subject EPI Movie" \
 		-c:v libx264 -pix_fmt yuv420p -r 10 ../${imagePatternPrefix}_bold_lrg.mp4
