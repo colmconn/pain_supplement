@@ -28,3 +28,6 @@ test_code
 
 ## files created by check-processing-progress.sh
 processing-progress-*
+
+## fiels created by structural-qa.sh
+structural-qa-*csv
