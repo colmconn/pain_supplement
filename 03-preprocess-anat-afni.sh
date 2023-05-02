@@ -36,12 +36,15 @@ CODE_DIR=${ROOT}/code
 ## run in parallel"
 enqueue=0
 
-GETOPT_OPTIONS=$( $GETOPT  -o "e:h:j:qs:" --longoptions "session::,threads::,jobid:,enqueue,subject::" -n ${PROGRAM_NAME} -- "$@" )
+GETOPT_OPTIONS=$( $GETOPT  -o "e:h:j:nqs:" --longoptions "enqueue,jobid:,noisy,session:,subject:,threads:" -n ${PROGRAM_NAME} -- "$@" )
 exitStatus=$?
 if [ $exitStatus != 0 ] ; then 
     error_message_ln "Error with getopt. Terminating..." >&2 
     exit $exitStatus
 fi
+
+## do not do @NoisySkullStrip by default
+noisy=0
 
 # Note the quotes around `$GETOPT_OPTIONS': they are essential!
 eval set -- "$GETOPT_OPTIONS"
@@ -51,15 +54,16 @@ while true ; do
 	    session=$2; shift 2 ;;
 	-h|--threads)
 	    threads=$2; shift 2 ;;
+	-j|--jobid)
+	    jobid=$2; shift 2 ;;	
+	-n|--noisy)
+	    noisy=1; shift 1 ;;
 	-q|--enqueue)
 	    enqueue=1; shift 1 ;;	
 	-s|--subject)
 	    subject=$2; shift 2 ;;
-	-j|--jobid)
-	    jobid=$2; shift 2 ;;	
 	--) 
 	    shift ; break ;;
-
 	*) 
 	    error_message_ln "${PROGRAM_NAME}: ${1}: invalid option" >&2
 	    exit 2 ;;
@@ -89,6 +93,11 @@ if [[ "x${threads}" == "x" ]] ; then
      warn_message_ln "No value for the number of parallel threads to use was provided. Defaulting to $threads"
 else
     info_message_ln "Using threads value of ${threads}"
+fi
+
+## Use @NoisySkullStrip
+if [[ ${noisy} -eq 1 ]] ; then
+    info_message_ln "Using @NoisySkullStrip"
 fi
 
 prefix=${subject}/${session}
@@ -122,16 +131,32 @@ set -e
 ## only use a single thread since we're going to run so many subjects
 ## in parallel
 export OMP_NUM_THREADS=${threads}
+export AFNI_MESSAGE_COLORIZE=NO
 
 if [[ ! -d ${PIPELINE_DIR}/${prefix}/ ]] ; then
     mkdir -p ${PIPELINE_DIR}/${prefix}/
 fi
 
+if [[ ${noisy} -eq 1 ]] ; then
+cd ${PIPELINE_DIR}/${prefix}/
+3dcopy ${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T1w.nii.gz \\
+       anat_orig+orig
+@NoisySkullStrip -input anat_orig+orig
+
+@SSwarper \\
+	  -odir  ${PIPELINE_DIR}/${prefix}/ \\
+	  -input ${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T1w.nii.gz \\
+	  -mask_ss anat_orig.ns+orig.HEAD \\
+	  -base  ${tpath}/${btemplate} \\
+	  -subid ${ss}
+
+else 
 @SSwarper \\
 	  -odir  ${PIPELINE_DIR}/${prefix}/ \\
 	  -input ${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T1w.nii.gz \\
 	  -base  ${tpath}/${btemplate} \\
 	  -subid ${ss}
+fi
 ##
 ## This script was generated on $( date ) by invoking the following command on $( uname -n ):
 ## ${FULL_COMMAND_LINE}
