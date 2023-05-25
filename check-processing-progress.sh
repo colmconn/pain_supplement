@@ -28,12 +28,13 @@ PIPELINE_DIR=${DERIVATIVE_DATA}/afni-${task}
 LOG_DIR=$ROOT/log
 CODE_DIR=${ROOT}/code
 
-[[ ! -d ${LOG_DIR} ]] && mkdir -p ${LOG_DIR}
+[[ -d ${LOG_DIR} ]] || mkdir -p ${LOG_DIR}
 
 subjects=( $( cd ${RAW_DATA} ; find  ./ -maxdepth 1 -name 'sub-[0-9][0-9][0-9]' | sort ) )
 ## subjects=( sub-105 )
 
-progress_file=processing-progress-$( date +"%Y%m%d" ).csv
+[[ ! -d ../log/processing_progress/ ]] || mkdir -p ../log/processing_progress/
+progress_file=../log/processing_progress/processing-progress-$( date +"%Y%m%d" ).csv
 echo "subject,session,raw_dir,source_t1,source_t2,rest_echo1,rest_echo2,rest_echo3,task_run1_echo1,task_run1_echo2,task_run1_echo3,task_run2_echo1,task_run2_echo2,task_run2_echo3,freesurfer,afni_anat,afni_rest,afni_task,rest_mot_excld,task_mot_excld" > ${progress_file}
 
 for ss in ${subjects[*]} ; do
