@@ -333,6 +333,9 @@ dsets_me_echo_arg=""
 for (( ee=1; ee <= ${nechos}; ee++ )) ; do
     ff=$( echo ${epiFiles[$ee]} | awk '{print $1}' )
     echos[$ee]=$( $CODE_DIR/get_bids_key_value.r -k EchoTime -j ${ff%.nii*}.json )
+    ## convert echo times from the JSON sidecar in seconds to
+    ## milliseconds
+    echos[$ee]=$( echo "${echos[$ee]} * 1000" | bc )
     msg=$( printf 'Echo [%02d]: %s\n' ${ee} ${echos[$ee]} )
     info_message_ln "${msg}"
     if [[ ${ee} -eq 1 ]] ; then 
@@ -345,6 +348,7 @@ for (( ee=1; ee <= ${nechos}; ee++ )) ; do
 	fi
     fi
 done
+
 ## info_message_ln "${dsets_me_run_arg}"
 info_message_ln "Writing: ${outputScriptName}"
 

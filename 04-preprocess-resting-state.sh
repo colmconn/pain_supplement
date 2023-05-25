@@ -332,6 +332,9 @@ declare -a echos
 for (( ee=1; ee <= ${nechos}; ee++ )) ; do
     ff=$( echo ${epiFiles[$ee]} | awk '{print $1}' )
     echos[$ee]=$( $CODE_DIR/get_bids_key_value.r -k EchoTime -j ${ff%.nii*}.json )
+    ## convert echo times from the JSON sidecar in seconds to
+    ## milliseconds
+    echos[$ee]=$( echo "${echos[$ee]} * 1000" | bc )
     msg=$( printf 'Echo [%02d]: %s\n' ${ee} ${echos[$ee]} )
     info_message_ln "${msg}"
     if [[ ! -z ${dsets_me_run_arg} ]] ; then 
