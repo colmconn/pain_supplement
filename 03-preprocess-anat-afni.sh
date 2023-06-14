@@ -70,6 +70,13 @@ while true ; do
     esac
 done
 
+# capture any arguments after -- to be passed as command line
+# arguments to @SSwarper
+#
+# no attempt is made to ensure that anything
+# captured into ss_optiosn is a valid @SSwarper command line argument
+ss_options="$@"
+
 if [ -z $subject ] ; then 
     error_message_ln "ERROR: The subject ID was not provided."
     exit
@@ -148,14 +155,14 @@ cd ${PIPELINE_DIR}/${prefix}/
 	  -input ${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T1w.nii.gz \\
 	  -mask_ss anat_orig.ns+orig.HEAD \\
 	  -base  ${tpath}/${btemplate} \\
-	  -subid ${ss}
+	  -subid ${ss} ${ss_options}
 
 else 
 @SSwarper \\
 	  -odir  ${PIPELINE_DIR}/${prefix}/ \\
 	  -input ${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T1w.nii.gz \\
 	  -base  ${tpath}/${btemplate} \\
-	  -subid ${ss}
+	  -subid ${ss} ${ss_options}
 fi
 ##
 ## This script was generated on $( date ) by invoking the following command on $( uname -n ):
