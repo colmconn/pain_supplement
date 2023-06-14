@@ -1,3 +1,6 @@
+#!/bin/bash
+
+if [[ 1 == 0 ]] ; then 
 
 subject=176
 session=baseline
@@ -14,3 +17,15 @@ echo ${session}
 ./04-preprocess-resting-state.sh --subject ${subject} --session ${session} -h 4 -n -c 3 -b 4 -q
 ./04-preprocess-task-tapping.sh --subject ${subject} --session ${session} -h 4 -n -c 3 -b 4 -q
 
+
+# subjects=$( cd ../sourcedata; ls -1d sub-1* )
+
+# for subject in ${subjects} ; do
+#     for ses in baseline followup ; do
+# 	session=ses-${ses}
+# 	if [[ -d ../sourcedata/${subject}/${session} ]] ; then
+# 	    ./04-preprocess-resting-state.sh --subject ${subject} --session ${session} -h 4 -n -c 3 -b 4 -q
+# 	    ./04-preprocess-task-tapping.sh  --subject ${subject} --session ${session} -h 4 -n -c 3 -b 4 -q
+# 	fi
+#     done
+# done
