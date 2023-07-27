@@ -72,7 +72,8 @@ dev.new(width=8, height=10, unit="in")
 print(graph)
 
 ## pr = pain ratings
-pr.wide=pain.ratings %>% mutate(task=paste0(task, run)) %>% 
+pr.wide=pain.ratings %>%
+    mutate(task=paste0(task, run)) %>% 
     pivot_wider(id_cols = subject:session, names_from=task, values_from = rating) %>%
     mutate(i_to_k1=kneeTapping1-initialpainrating1, k1_to_k2=kneeTapping2-kneeTapping1) %>%
     select(! initialpainrating1:kneeTapping2)
