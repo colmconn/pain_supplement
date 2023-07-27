@@ -64,6 +64,16 @@ for subject in ${subjects[*]} ; do
     fi
 done
 
+cd ${PIPELINE_DIR}
+echo "Subj session InputFile" > datatable.tsv
+## for session in "${!sets[@]}" ; do
+for session in baseline followup ; do
+    for inputfile in ${sets[${session}]} ; do
+	subject=$( echo ${inputfile} | sed -e "s#.*\(sub-[0-9][0-9][0-9]\)_.*#\1#" )
+	echo "${subject} ${session} ${inputfile}" >> datatable.tsv
+    done
+done
+
 # info_message_ln "Baseline set n: $( echo ${sets[baseline]} | wc -w)"
 # info_message_ln "Followup set n: $( echo ${sets[followup]} | wc -w)"
 
@@ -85,7 +95,7 @@ done
 # info_message_ln "Baseline set: ${sets[baseline]}"
 # info_message_ln "Followup set: ${sets[followup]}"
 
-cd ${PIPELINE_DIR}
+
 ln -sf $tpath/$btemplate .
 first_stats_file=$( echo ${sets[baseline]} | awk '{print $1}' )
 3dbucket -prefix Bmask $tpath/$btemplate'[Bmask]' $tpath/$btemplate 
