@@ -1,121 +1,129 @@
 {
     "descriptions": [
+	{
+	"id": "task-rest",
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest", "echo-1"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "EchoNumber": "1"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+	{
+	"id": "task-rest",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest", "echo-2"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+	{
+	"id": "task-rest",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest", "echo-3"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "EchoNumber": "3"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+
 	
 	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-rest_echo-1",
-	"criteria": {
-	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
-	    "EchoNumber": "1"
-	},
-	"sidecarChanges": {
-	    "TaskName": "rest"
-	}
-    },
-	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-rest_echo-2",
-	"criteria": {
-	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
-	    "EchoNumber": "2"
-	},
-	"sidecarChanges": {
-	    "TaskName": "rest"
-	}
-    },
-	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-rest_echo-3",
-	"criteria": {
-	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
-	    "EchoNumber": "3"
-	},
-	"sidecarChanges": {
-	    "TaskName": "rest"
-	}
-    },
-
-
-	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-tapping_run-1_echo-1",
+	"id": "task-tapping",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1", "echo-1"],
 	"criteria": {
 	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
 	    "EchoNumber": "1"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "TaskName": "tapping"
 	}
     },
 	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-tapping_run-1_echo-2",
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1", "echo-2"],
 	"criteria": {
 	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
 	    "EchoNumber": "2"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "TaskName": "tapping"
 	}
     },
 	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-tapping_run-1_echo-3",
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1", "echo-3"],
 	"criteria": {
 	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
 	    "EchoNumber": "3"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "TaskName": "tapping"
 	}
     },
 
 
 	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-tapping_run-2_echo-1",
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2", "echo-1"],
 	"criteria": {
 	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
 	    "EchoNumber": "1"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "TaskName": "tapping"
 	}
     },
 	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-tapping_run-2_echo-2",
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2", "echo-2"],
 	"criteria": {
 	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
 	    "EchoNumber": "2"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "TaskName": "tapping"
 	}
     },
 	{
-	"dataType": "func",
-	"modalityLabel": "bold",
-	"customLabels": "task-tapping_run-2_echo-3",
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2", "echo-3"],
 	"criteria": {
 	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
 	    "EchoNumber": "3"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "TaskName": "tapping"
 	}
     },
 	{
-	"dataType": "fmap",
-	"modalityLabel": "magnitude1",
+	"datatype": "fmap",
+	"suffix": "magnitude1",
 	"criteria": {
             "SeriesDescription": "gre_field_mapping_2.5mm",
 	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"],
@@ -123,59 +131,65 @@
 	}
     },
 	{
-	"dataType": "fmap",
-	"modalityLabel": "magnitude2",
+	"datatype": "fmap",
+	"suffix": "magnitude2",
 	"criteria": {
             "SeriesDescription": "gre_field_mapping_2.5mm",
 	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"],
 	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["task-rest", "task-tapping"]
 	}
     },
 
 	{
-	"dataType": "fmap",
-	"modalityLabel": "phasediff",
+	"datatype": "fmap",
+	"suffix": "phasediff",
 	"criteria": {
             "SeriesDescription": "gre_field_mapping_2.5mm",
 	    "ImageType": ["ORIGINAL", "PRIMARY", "P", "ND", "PHASE"]
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["task-rest", "task-tapping"]
 	}
+	
     },
 	
 	{
-	"dataType": "anat",
-	"modalityLabel": "T1w",
-	"customLabels": "rec-prescannorm",
+	"datatype": "anat",
+	"suffix": "T1w",
+	"custom_entities": "rec-prescannorm",
 	"criteria": {
 	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
-	    "ImageType": [ "ORIGINAL", "PRIMARY", "M", "ND", "NORM", "FM5", "5", "FIL" ]
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND", "NORM", "FM5", "5", "FIL"]
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "ProtocolName": "T1"
 	}	
     },
 	{
-	"dataType": "anat",
-	"modalityLabel": "T1w",
-	"customLabels": "rec-noprescannorm",
+	"datatype": "anat",
+	"suffix": "T1w",
+	"custom_entities": "rec-noprescannorm",
 	"criteria": {
 	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
-	    "ImageType": [ "ORIGINAL", "PRIMARY", "M", "ND" ]
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"]
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "ProtocolName": "T1"
 	}	
     },
 	{
-	"dataType": "anat",
-	"modalityLabel": "T2w",
+	"datatype": "anat",
+	"suffix": "T2w",
 	"criteria": {
 	    "SeriesDescription": "t2_space_sag_p4_iso*"
 	},
-	"sidecarChanges": {
+	"sidecar_changes": {
 	    "ProtocolName": "T2"
 	}	
 	
     }
-	
     ]
 }
