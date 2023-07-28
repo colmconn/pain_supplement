@@ -54,6 +54,9 @@ info.message("Creating 3dMSS data table file")
 mss.data.table=left_join(init.data.table, delta.pain.rating, b=c("subject", "session"))
 
 mss.data.table=left_join(mss.data.table, demographics, by=c("subject")) %>%
+    mutate(label=paste(str_extract(subject, "[0-9]+"),
+                       str_replace(session, "ses-", "" ), sep="_")) %>%
+    relocate(label, .after="session") %>%
     relocate(source.file, .after=last_col()) %>%
     relocate(dPainRating, .before=source.file) %>%
     mutate(sex     = case_when(sex     == "female"       ~ -1,
@@ -161,8 +164,8 @@ info.message(str_glue("Writing HRF prediciton data table: {pred.data.table.file}
 ##        dPainRating, tr) %>%
 
 mss.data.table %>%
-    select(subject, session, tr) %>%
-    rename(label=subject, TR=tr) %>%
+    select(label, session, tr) %>%
+    rename(TR=tr) %>%
     write_delim(file=pred.data.table.file, delim=" ", quote="none")
                       
 ## for (xx in c("age", "pain_length")) {
