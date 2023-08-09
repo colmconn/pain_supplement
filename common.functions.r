@@ -1,20 +1,35 @@
-library(crayon)
+## library(crayon)
 
-error.style <- combine_styles("bold", "red4")
-warn.style  <- combine_styles("bold", "yellow")
-info.style  <- combine_styles("bold", "green")
+## error.style <- combine_styles("bold", "red4")
+## warn.style  <- combine_styles("bold", "yellow")
+## info.style  <- combine_styles("bold", "green")
+
+## error.message <- function(...) {
+##     cat(error.style("*** ") %+% paste0(..., sep="") %+% "\n", sep="")
+## }
+
+## warn.message <- function(...) {
+##     cat(warn.style("*** ") %+% paste(...) %+% "\n", sep="")
+## }
+
+## info.message <- function(...) {
+##     cat(info.style("*** ") %+% paste(...) %+% "\n", sep="")
+## }
+
+library(cli)
 
 error.message <- function(...) {
-    cat(error.style("*** ") %+% paste0(..., sep="") %+% "\n", sep="")
+    cli_alert_danger(c(...))
 }
 
 warn.message <- function(...) {
-    cat(warn.style("*** ") %+% paste(...) %+% "\n", sep="")
+    cli_alert_warning(c(...))
 }
 
 info.message <- function(...) {
-    cat(info.style("*** ") %+% paste(...) %+% "\n", sep="")
+    cli_alert_success(c(...))
 }
+
 
 pigz.save <- function (..., list=character(), file=stop("'file' must be specified"), ncores=15) {    
     zipper=suppressWarnings(system("which pigz", intern=TRUE, ignore.stderr=TRUE))
