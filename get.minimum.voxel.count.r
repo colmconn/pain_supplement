@@ -34,7 +34,7 @@ sink.reset()
 help <- function () {
     cat(" NAME get.minimum.voxel.count.r - Get the minimum number of voxels to correct for mulitple comparisions across space according to 3dClustSim.
 SYNOPSIS
-	get.minimum.voxel.count.r [OPTIONS]
+        get.minimum.voxel.count.r [OPTIONS]
 
 DESCRIPTION
 	Reads 1D files created by an by an invocation of 3dClustSim
@@ -55,7 +55,7 @@ DESCRIPTION
 		Print verbose debugging output.
 	    
 	-n, --nn
-		The neighborhood side. must be one of 1, 2, or 3.
+		The neighborhood side. Must be one of 1, 2, or 3.
 
 	-s, --side
 		The sidedness of the tests. Must be one of 1, 2, or
@@ -66,7 +66,7 @@ DESCRIPTION
 	    	corrected alpha value.
 
 	-a, --alpha
-		The corrected alpha value which you want.
+		The corrected alpha value, at the cluster level, which you want.
 
 EXAMPLE
 	To get the minimum number of voxels required to correct a
@@ -84,7 +84,7 @@ REPORTING BUGS
        Report bugs to <>
 
 COPYRIGHT
-       Copyright © 2017 Colm G. Connolly.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+       Copyright © 2023 Colm G. Connolly.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
        This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
 ", file=stdout())
 }
