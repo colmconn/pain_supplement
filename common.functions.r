@@ -19,15 +19,15 @@
 library(cli)
 
 error.message <- function(...) {
-    cli_alert_danger(c(...))
+    cli_alert_danger(paste(..., collapse=" "))
 }
 
 warn.message <- function(...) {
-    cli_alert_warning(c(...))
+    cli_alert_warning(paste(..., collapse=" "))
 }
 
 info.message <- function(...) {
-    cli_alert_info(c(...))
+    cli_alert_info(paste(..., collapse=" "))
 }
 
 
