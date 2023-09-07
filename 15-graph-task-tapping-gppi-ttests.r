@@ -321,7 +321,7 @@ seed.count=1
 for (seed.name in seed.names) {
     infix=sprintf("count-%02d_seed-%s", seed.count,
                   seed.name.to.filename(seed.name))
-    info.message(sprintf("Graphing t-tests for GPPI seed %02d : %s", seed.count, seed.name))
+    cli_h1(sprintf("Graphing t-tests for GPPI seed %02d : %s", seed.count, seed.name))
 
     info.message("Reading data table file")
     data.table.file=file.path(derivative.data, sprintf("datatable_%s.tsv", infix))
