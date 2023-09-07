@@ -104,7 +104,6 @@ read.clusters.locations <- function (inFilename) {
     return (clusterWhereAmI)
 }
 
-
 make.publication.table <- function(in.clusters.locations,
                                    in.clusters.table,
                                    in.contrast.values=NULL,
@@ -128,14 +127,14 @@ make.publication.table <- function(in.clusters.locations,
                                  "Hemisphere"=hemisphere,
                                  in.clusters.table[, c("Volume", "MI RL", "MI AP", "MI IS")]))
     }
-    locations=locations %>%
-        mutate(across(where(is.numeric), ~ round(., digits = 0)))
+    ## locations=locations %>%
+    ##     mutate(across(where(is.numeric), ~ round(., digits = 0)))
     ## convert volume on number of voxels to (e.g.) SI units by
     ## multiplying by a scale factor
     if (in.volume.voxel.scale.factor != 1) {
         locations=locations %>%
-            mutate(`Volume (muL)`=Volume*in.volume.voxel.scale.factor, .after=Volume) %>%
-            mutate(across(`Volume (muL)`, ~ round(., digits = 2)))
+            mutate(`Volume (muL)`=Volume*in.volume.voxel.scale.factor, .after=Volume)# %>%
+            #mutate(across(`Volume (muL)`, ~ round(., digits = 2)))
     }
     
     if (! is.null(in.contrast.values)) {
@@ -144,8 +143,8 @@ make.publication.table <- function(in.clusters.locations,
                                  "value"),
                             .name_repair="minimal")
         colnames(locations)=c(head(colnames(locations), -1), "Average Contrast")
-        locations=locations %>%
-            mutate(across(last_col(), ~ round(., digits = 2)))
+        ## locations=locations %>%
+        ##     mutate(across(last_col(), ~ round(., digits = 2)))
     }
 
     if (! is.null(in.stats.values)) {
@@ -154,8 +153,8 @@ make.publication.table <- function(in.clusters.locations,
                                  "value"),
                             .name_repair="minimal")
         colnames(locations)=c(head(colnames(locations), -1), in.stats.values.name)
-        locations=locations %>%
-            mutate(across(last_col(), ~ round(., digits = 2)))
+        ## locations=locations %>%
+        ##     mutate(across(last_col(), ~ round(., digits = 2)))
     }
 
     if ( ! is.null(in.stats)) {
@@ -167,15 +166,60 @@ make.publication.table <- function(in.clusters.locations,
             mutate(across(order, as.numeric)) %>%
             arrange(order) %>%
             select(!c(cluster, order)) %>%
-            mutate(across(unique(in.stats$session), ~ round(., digits = 2))) %>%
             rename_with(function(x) str_to_title(str_remove(x, "ses-")))
         locations=bind_cols(locations, ss)
+##            mutate(across(unique(in.stats$session), ~ round(., digits = 2))) %>%
         
     }
         
     rownames(locations)=NULL
     return(locations)
 }
+
+run.correlations <- function(clusters.locations, rois.stats, data.table) {
+
+    cor.data.table=inner_join(rois.stats, data.table, by=c("subject", "session")) %>%
+        select(!c(label, initialpainrating1, kneeTapping1, kneeTapping2, source.file)) %>%
+        pivot_longer(cols=starts_with("Mean_"), names_to="cluster")
+
+    names(clusters.locations)=NULL
+    corr.strings=list()
+    for (ii in seq.int(1, length(clusters.locations))) {
+        info.message("############################################################")
+        msg=sprintf("Running correlations for ROI %02d: %s", ii, clusters.locations[ii])
+        info.message(msg)
+        roi=paste0("Mean_", ii)
+
+        ss=cor.data.table %>%
+            filter(cluster==roi)
+
+        ct=cor.test(ss$dPainRating, ss$value)
+        ##cor.str=sprintf("%d,%s,%0.3f,%0.3f,%02d,%0.3f",
+        conf.level.str=format(attr(ct$conf.int, "conf.level")*100, digits=2)
+        cor.str=c(ii,
+                  clusters.locations[ii],
+                  ct$estimate,
+                  ct$statistic,
+                  ct$parameter,
+                  ct$p.value,
+                  ct$conf.int[1],
+                  ct$conf.int[2])
+        names(cor.str)=c("ID", "Structure",  "Correlation",  "T value", "DoF", "p value",
+                         sprintf("%s%% CI LB",  conf.level.str),
+                         sprintf("%s%% CI UB",  conf.level.str))
+        corr.strings[[ii]]=cor.str
+        print(ct)
+    }
+
+    corr.data.table=
+        corr.strings %>%
+        bind_rows()  %>%
+        mutate(across(!c(Structure), as.numeric))
+
+    return(corr.data.table)
+
+}
+
 ####################################################################################################
 ### End of functions
 ####################################################################################################
@@ -373,4 +417,12 @@ publication.table=make.publication.table(clusters.locations,
 publication.table.filename=file.path(derivative.data, "publication.table.tsv")
 info.message("Saving publication table to", publication.table.filename)
 write_tsv(publication.table, publication.table.filename)
-print(publication.table)
+info.message("Publication table")
+print(publication.table, n=Inf)
+
+correlations.table=run.correlations(clusters.locations, rois.stats, data.table)
+correlations.table.filename=file.path(derivative.data, "correlations.table.tsv")
+info.message("Saving correlations table to", correlations.table.filename)
+write_tsv(correlations.table, correlations.table.filename)
+info.message("Table of correlations")
+print(correlations.table, n=Inf)
