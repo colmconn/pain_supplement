@@ -102,27 +102,27 @@ fi
 if [[ "x$pValue" == "x" ]] ; then
     ## voxelwise pvalue
     pValue=0.05
-    echo "*** Set voxelwise pvalue to $pValue (default)"
+    warn_message_ln "Set voxelwise pvalue to $pValue (default)"
 else
-    echo "*** Set voxelwise pvalue to $pValue"
+    info_message_ln "Set voxelwise pvalue to $pValue"
 fi
 
 if [[ "x$alpha" == "x" ]] ; then
     # clusterwise pvalue
     alpha=0.050
-    echo "*** Set whole brain alpha to $alpha (default)"	    
+    warn_message_ln "Set whole brain alpha to $alpha (default)"	    
 else
-    echo "*** Set whole brain alpha to $alpha"    
+    info_message_ln "Set whole brain alpha to $alpha"    
 fi
 
 if [[ "x$side" == "x" ]] ; then
-    echo "*** No value provided for side. Defaulting to bisided"
+    warn_message_ln "No value provided for side. Defaulting to bisided"
     side="bi"
 else
-    echo "*** Running a $side test"
+    info_message_ln "Running a $side test"
 fi
 
-echo "*** Will use group results files in ${PIPELINE_DIR}"
+info_message_ln "Will use group results files in ${PIPELINE_DIR}"
 
 tLabelPrefix="baseline-followup"
 csvFile=parameters.${tLabelPrefix}.csv
@@ -134,44 +134,44 @@ if [[ $overwrite -eq 1 ]] || [[ ! -f $csvFile ]] ; then
 fi
 
 dataTableFilename=${PIPELINE_DIR}/datatable.tsv 
-echo "### Data table file is: $dataTableFilename"
+info_message_ln "Data table file is: $dataTableFilename"
 
 tTestFile=${ttests_task}+tlrc
-echo "### T-test file is: $tTestFile"
+info_message_ln "T-test file is: $tTestFile"
 
-tContrastBrikId=$( 3dinfo -label2index "${tLabelPrefix}_mean" $tTestFile 2> /dev/null )    
+contrastBrikId=$( 3dinfo -label2index "${tLabelPrefix}_mean" $tTestFile 2> /dev/null )    
 statsBrikId=$( 3dinfo -label2index "${tLabelPrefix}_Zscr" $tTestFile 2> /dev/null )
 csimfile=${ttests_task}.CSimA.NN${NN}_${side}sided.1D
 nVoxels=$( ${CODE_DIR}/get.minimum.voxel.count.r --nn $NN --alpha=$alpha --pthr=$pValue --side=$side -c ${csimfile} )
 nVoxels="$( echo $nVoxels | tr -d '[:space:]')"
 if [[ "x$nVoxels" == "x" ]] || [[ "$nVoxels" == "NA" ]] ; then                                                                                                                                
-    echo "*** Couldn't get the correct number of voxels to go with pvalue=${pValue} and corrected alpha=${alpha}"
-    echo "*** You may need to pad these values with zeros to ensure you match the correct row and column in ${csimfile}"
-    echo "*** This may also indicate that the 3dClustSim table does not contain the p values specified"
+    error_message_ln "Couldn't get the correct number of voxels to go with pvalue=${pValue} and corrected alpha=${alpha}"
+    error_message_ln "You may need to pad these values with zeros to ensure you match the correct row and column in ${csimfile}"
+    error_message_ln "This may also indicate that the 3dClustSim table does not contain the p values specified"
     exit
 fi
 
 ## tThreshold=$( cdf -p2t fitt $pValue $df | sed 's/t = //' )
 tThreshold=$( cdf -p2t fizt $pValue | sed 's/t = //' )
-## echo "### fwhm = ${usedFwhm}"
-echo "### tLabelPrefix = $tLabelPrefix"
-echo "### tContrastBrikId = $tContrastBrikId"
-echo "### statsBrikId = $statsBrikId"
-echo "### tThreshold = $tThreshold"
-## echo "### rmm = $rmm"
-echo "### NN  = $NN"
-echo "### nVoxels = $nVoxels"
-## echo "### df = $df"
-echo "### voxelwise pValue = $pValue"
-echo "### corrected pValue = $alpha"
-echo "### Clustersim file = ${csimfile}"
+## info_message_ln "fwhm = ${usedFwhm}"
+info_message_ln "tLabelPrefix = $tLabelPrefix"
+info_message_ln "contrastBrikId = $contrastBrikId"
+info_message_ln "statsBrikId = $statsBrikId"
+info_message_ln "tThreshold = $tThreshold"
+## info_message_ln "rmm = $rmm"
+info_message_ln "NN  = $NN"
+info_message_ln "nVoxels = $nVoxels"
+## info_message_ln "df = $df"
+info_message_ln "voxelwise pValue = $pValue"
+info_message_ln "corrected pValue = $alpha"
+info_message_ln "Clustersim file = ${csimfile}"
 
 suffix=${tLabelPrefix}
 
 3dClusterize  \
     -inset ${tTestFile} \
     -ithr ${statsBrikId} \
-    -idat ${tContrastBrikId} \
+    -idat ${contrastBrikId} \
     -mask Bmask_epi+tlrc.HEAD \
     -NN $NN \
     -bisided p=${pValue} \
@@ -180,7 +180,7 @@ suffix=${tLabelPrefix}
 cp clusters.table.${suffix}.txt clusters.table.${suffix}.txt.bak
 
 if grep -q "NO CLUSTERS FOUND" clusters.table.${suffix}.txt > /dev/null 2>&1 ; then 
-    echo "*** clusters.table.${suffix}.txt contains no clusters. Deleting it."
+    warn_message_ln "clusters.table.${suffix}.txt contains no clusters. Deleting it."
     rm -f clusters.table.${suffix}.txt
 fi
 
@@ -192,27 +192,27 @@ if [[ -f clusters.order.${suffix}+tlrc.HEAD ]] ; then
     
     columnNumber=$( head -1 ${dataTableFilename} | tr '[[:space:]]' '\n' | grep -n InputFile | cut -f1 -d':' )
     if [[ -z ${columnNumber} ]] ; then
-        echo "Couldn't find a column named InputFile in $dataTableFilename"
-        echo "*** Cannot continue"
+        error_message_ln "Couldn't find a column named InputFile in $dataTableFilename"
+        error_message_ln "Cannot continue"
         exit 1
     fi
     
     3dROIstats -mask clusters.order.${suffix}+tlrc.HEAD $( tail -n +2 ${dataTableFilename} |  awk -v cn=${columnNumber} '{ print $cn }' ) > roi.stats.${suffix}.txt
 
-    3dROIstats -nobriklab -mask clusters.order.${suffix}+tlrc.HEAD ${tTestFile}\[${tContrastBrikId}\] > roi.stats.${suffix}.averageContrastValue.txt
-    3dROIstats -nobriklab -mask clusters.order.${suffix}+tlrc.HEAD ${tTestFile}\[${statsBrikId}\]     > roi.stats.${suffix}.averageZscore.txt
+    3dROIstats -nobriklab -mask clusters.order.${suffix}+tlrc.HEAD ${tTestFile}\[${contrastBrikId}\] > roi.stats.${suffix}.averageContrastValue.txt
+    3dROIstats -nobriklab -mask clusters.order.${suffix}+tlrc.HEAD ${tTestFile}\[${statsBrikId}\]    > roi.stats.${suffix}.averageZscore.txt
     
     3drefit -cmap INT_CMAP clusters.order.${suffix}+tlrc.HEAD
 else
     nClusters=0
-    echo "*** WARNING No clusters found!"
+    warn_message_ln "WARNING No clusters found!"
 fi
 echo "${tLabelPrefix},${contrastBrikId},${statsBrikId},${tThreshold},${NN},${nVoxels},${pValue},${alpha},${nClusters},${tTestFile}" >> ${csvFile}
 
 cd ${CODE_DIR}
-##echo "*** Making cluster location tables using Maximum intensity"
+##info_message_ln "Making cluster location tables using Maximum intensity"
 ##./cluster2Table.pl --space=mni --force -mi $GROUP_RESULTS
 
-echo "*** Making cluster location tables using Center of Mass"
+error_message_ln "Making cluster location tables using Center of Mass"
 ./cluster2Table.pl --space=mni --force ${PIPELINE_DIR}
 
