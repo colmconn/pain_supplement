@@ -27,7 +27,7 @@ warn.message <- function(...) {
 }
 
 info.message <- function(...) {
-    cli_alert_success(c(...))
+    cli_alert_info(c(...))
 }
 
 
