@@ -99,11 +99,11 @@ ss=${subject}/${session}
 preprocessedRsfcDir=${PREPROC_PIPELINE_DIR}/${ss}/${task}-preprocessed-polortA-NL
 
 if [[ -f ${preprocessedRsfcDir}/errts.${subject}_${session}_REML+tlrc.HEAD ]] ; then
-    if [[ ! -d ${PIPELINE_DIR}/subjects/${ss} ]] ; then
-	mkdir -p ${PIPELINE_DIR}/subjects/${ss}/
+    if [[ ! -d ${PIPELINE_DIR}/${ss} ]] ; then
+	mkdir -p ${PIPELINE_DIR}/${ss}/
     fi
     
-    cd ${PIPELINE_DIR}/subjects/${ss}/
+    cd ${PIPELINE_DIR}/${ss}/
     
     for seed in ${seeds} ; do
 
@@ -118,11 +118,11 @@ if [[ -f ${preprocessedRsfcDir}/errts.${subject}_${session}_REML+tlrc.HEAD ]] ; 
             mkdir ${seedName}
         fi
 
-        info_message "Extracting timeseries for seed ${seed}"
+        info_message_ln "Extracting timeseries for seed ${seed}"
         3dROIstats -quiet -mask_f2short -mask ${seed} \
 		   ${preprocessedRsfcDir}/errts.${subject}_${session}_REML+tlrc.HEAD > ${seedName}/${seedName}.ts.1D
 
-        info_message "Computing Fisher Z-transformed Pearson Correlation for seed ${seedName}"
+        info_message_ln "Computing Fisher Z-transformed Pearson Correlation for seed ${seedName}"
         3dTcorr1D -pearson -Fisher \
 		  -mask ${preprocessedRsfcDir}/mask_group+tlrc.HEAD \
 		  -prefix ${seedName}/${seedName}.z-score \
