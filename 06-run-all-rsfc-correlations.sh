@@ -24,7 +24,7 @@ DERIVATIVE_DATA=$ROOT/derivative
 LOG_DIR=$ROOT/log
 CODE_DIR=${ROOT}/code
 
-## the %P argument in printf prints the File's name with the name of
+## the %P argument in printf prints the file's name with the name of
 ## the starting-point under which it was found removed.
 ## See https://man7.org/linux/man-pages/man1/find.1.html
 subjects=$( cd ${SOURCE_DATA}; find ./ -regex '.*sub-[0-9][0-9][0-9]/ses-[a-z]*' -printf "%P\n" )
@@ -36,7 +36,7 @@ info_message_ln "List of tasks to be executed is stored in $taskFile"
 
 cat /dev/null > $taskFile
 
-seedFiles="krienen-dlpfc-seeds.txt kelly-insula-seeds.txt goldapple-dlpfc-seeds.txt goldapple-dacc-mpfc-seeds.txt"
+seedFiles="fox-dmn-seeds.txt krienen-dlpfc-seeds.txt kelly-insula-seeds.txt goldapple-dlpfc-seeds.txt goldapple-dacc-mpfc-seeds.txt"
 for seeds in ${seedFiles} ; do
     info_message_ln "Seed file: ${seeds}"
     for ss in ${subjects} ; do
@@ -83,9 +83,9 @@ nTasks=$( cat $taskFile | wc -l )
 sge_command="qsub -N ${task} -q ${queue} -j y -m n -V -wd $( pwd ) -o ${LOG_DIR} -t 1-${nTasks}" 
 echo $sge_command
 ( exec $sge_command <<EOF
-#!/bin/sh
+#!/bin/bash
 
-#$ -S /bin/sh
+#$ -S /bin/bash
 
 command=\`sed -n -e "\${SGE_TASK_ID}p" $taskFile\`
 
