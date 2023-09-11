@@ -34,7 +34,7 @@ CODE_DIR=${ROOT}/code
 ## run in parallel"
 enqueue=0
 
-GETOPT_OPTIONS=$( $GETOPT  -o "e:h:qs:" --longoptions "session::,threads::,enqueue,subject::" -n ${PROGRAM_NAME} -- "$@" )
+GETOPT_OPTIONS=$( $GETOPT  -o "e:h:qs:" --longoptions "session:,threads:,enqueue,subject:" -n ${PROGRAM_NAME} -- "$@" )
 exitStatus=$?
 if [ $exitStatus != 0 ] ; then 
     error_message_ln "Error with getopt. Terminating..." >&2 
@@ -90,7 +90,7 @@ fi
 
 prefix=${subjectNumber}/${session}
 ss=${subjectNumber}_${session}
-session_norm=${DERIVATIVE_DATA}/freesurfer-7.0/${prefix}/mri/norm.mgz
+session_norm=${DERIVATIVE_DATA}/freesurfer-7.0/${ss}/mri/norm.mgz
 base_norm=${DERIVATIVE_DATA}/freesurfer-7.0/${subjectNumber}/mri/norm.mgz
 freesurfer_script=${CODE_DIR}/run/${ss}_freesurfer_long.sh
 if [[ -f ${session_norm} ]] && [[ ${base_norm} ]]  ; then
