@@ -183,11 +183,19 @@ seed.name.to.filename <- function(in.string) {
     return(out.string)
 }
 
-run.correlations <- function(clusters.locations, rois.stats, data.table) {
+run.correlations <- function(clusters.locations, rois.stats, data.table, make.graphs=FALSE) {
 
     cor.data.table=inner_join(rois.stats, data.table, by=c("subject", "session")) %>%
         select(!c(label, initialpainrating1, kneeTapping1, kneeTapping2, source.file)) %>%
         pivot_longer(cols=starts_with("Mean_"), names_to="cluster")
+
+    ## now compute differences between baseline and followup for pain rating and cluster
+    cor.data.table=cor.data.table %>%
+        pivot_wider(id_cols=c(subject, age, sex, pain_length, leg, cluster),
+                    names_from=session,
+                    values_from=c(mean.pain.rating, value)) %>%
+        mutate(dPainRating=`mean.pain.rating_ses-baseline`-`mean.pain.rating_ses-followup`) %>%
+        mutate(dvalue=`value_ses-baseline`-`value_ses-followup`)
 
     names(clusters.locations)=NULL
     corr.strings=list()
@@ -200,7 +208,7 @@ run.correlations <- function(clusters.locations, rois.stats, data.table) {
         ss=cor.data.table %>%
             filter(cluster==roi)
 
-        ct=cor.test(ss$dPainRating, ss$value)
+        ct=cor.test(ss$dPainRating, ss$dvalue)
         ##cor.str=sprintf("%d,%s,%0.3f,%0.3f,%02d,%0.3f",
         conf.level.str=format(attr(ct$conf.int, "conf.level")*100, digits=2)
         cor.str=c(ii,
@@ -215,7 +223,62 @@ run.correlations <- function(clusters.locations, rois.stats, data.table) {
                          sprintf("%s%% CI LB",  conf.level.str),
                          sprintf("%s%% CI UB",  conf.level.str))
         corr.strings[[ii]]=cor.str
-        print(ct)
+        ## print(ct)
+
+        if (ct$p.value <= 0.1 && isTRUE(make.graphs)) {
+            info.message("P value < 0.01. Creating correlation graph")
+
+            ## A theme for the graphs
+            my.base.size=16
+            my.theme=
+                theme_bw(base_size =  my.base.size) +
+                theme(
+                    ## legend.position="none",
+                    legend.position="bottom",        
+                    ## panel.grid.major = element_blank(),
+                    ## panel.grid.minor = element_blank(),
+                    
+                    ##remove the panel border
+                    ##panel.border = element_blank(),
+
+                    ## facet strip label text size
+                    strip.text.x=element_text(size=my.base.size*0.8),
+                    
+                    ## add back the axis lines
+                    axis.line=element_line(colour = "grey50"),
+                    ## legend.text = element_text(angle=45),
+                    
+                    ##axis.title.x=element_blank(),
+                    axis.title.x = element_text(size=my.base.size, vjust=0),
+                    axis.title.y = element_text(size=my.base.size, vjust=0.4, angle =  90),
+                    plot.title=element_text(size=my.base.size*1.2, vjust=1))
+            
+            pd <- position_jitterdodge(jitter.height=0.05, dodge.width=0.05) # move them .1 to the left and right, and up or down
+            colorCount=length(unique(ss$subject))
+            getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+            corr.graph=ggplot(ss, aes(dPainRating, dvalue, color=subject)) %+%
+                scale_color_manual(name="Subject", values=getPalette(colorCount),
+                                   aesthetics = c("color")) %+%                
+                geom_jitter(size=3) %+%
+                geom_smooth(method=lm, se=FALSE, color="black", group=1) %+%               
+                labs(x="Change in mean pain rating",
+                     y="Change in Beta value",
+                     title=clusters.locations[ii],
+                     subtitle="Baseline - Follow-up") %+%
+                my.theme
+
+            if (isTRUE(! is.na(Sys.getenv("DISPLAY", unset=NA)))) {
+                dev.new(width=8, height=10, unit="in")
+                print(corr.graph)
+            }
+            graph.filename=file.path(graph.dir,
+                                     sprintf("%02d_corr_%s.%s", ii,
+                                             paste0(str_replace_all(clusters.locations[ii], " ", "_")),
+                                             "pdf"))
+            info.message(c("Saving", graph.filename))
+            ggsave(graph.filename, corr.graph, width=8, height=8, units="in")
+        }
     }
 
     corr.data.table=
@@ -262,7 +325,10 @@ delta.pain.rating=pain.ratings %>%
     mutate(task=paste0(task, run)) %>%
     select(! run) %>%
     pivot_wider(id_cols = subject:session, names_from=task, values_from = rating) %>%
-    mutate(dPainRating=kneeTapping2-initialpainrating1) #%>%
+    rowwise() %>%
+    mutate(mean.pain.rating=mean(c_across(!c(subject, session))))
+
+##    mutate(dPainRating=kneeTapping2-initialpainrating1) #%>%
 ##    select(! c(initialpainrating1, kneeTapping2))
 
 info.message("Reading demographics file")
@@ -339,8 +405,8 @@ for (seed.name in seed.names) {
                            str_replace(session, "ses-", "" ), sep="_")) %>%
         relocate(label, .after="session") %>%
         relocate(source.file, .after=last_col()) %>%
-        relocate(dPainRating, .before=source.file) %>%
         arrange(subject, session)
+##            relocate(dPainRating, .before=source.file) %>%
 
     clusters.table.file=    file.path(derivative.data, sprintf("clusters.table.%s_%s.txt", infix, t.label.prefix))
     clusters.locations.file=file.path(derivative.data, sprintf("clusters.locations.%s_%s.csv", infix, t.label.prefix))
