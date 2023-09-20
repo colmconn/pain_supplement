@@ -6,10 +6,11 @@ graphics.off()
 library(tidyverse)
 library(ggthemes)
 library(RColorBrewer)
-## library(ggplot2)
+library(ggplot2)
 ## library(ggforce)
 library(R.utils)
 
+source("common.functions.r")
 ## turn off messages about col type guesses from readr
 options(readr.show_col_types = FALSE)
 
@@ -51,39 +52,13 @@ summarize.df <- function(in.data, in.group.var, in.var, in.conf.interval=0.95) {
 
 
 ## the grep here is to discard the unwanted test01 subject
+info.message("Finding all dfile_rall.1D files")
 motion.dfiles=grep("test01",
                    list.files(file.path(derivative.data,
                                         paste0("afni-", c("task-tapping",
                                                           "resting-state"))),
                               full.names=TRUE, pattern="dfile_rall.1D", recursive=TRUE),
                    invert=TRUE, value=TRUE)
-
-## this version works on a list where each element of the list is a
-## vector of filenames, e.g.,
-##
-## [['task-tapping']] -> c(file1, file2, file3)
-## [['resting-state']] -> c(file1, file2, file3)
-##
-## subject.session.pattern=".*/(sub-([[:alnum:]]*))/(ses-([[:alnum:]]*))/.*"
-## subject.session.df <-
-##     seq_along(motion.dfiles) %>%
-##     map(function(yy) {
-##         seq_along(motion.dfiles[[yy]]) %>%
-##             map(function(xx) {        
-##                 ff=motion.dfiles[[yy]][xx]
-##                 m=regexec(subject.session.pattern, ff)
-##                 matches=regmatches(motion.dfiles[[yy]][xx], m)[[1]]
-##                 return(list("subject"=rep(matches[2],
-##                                           motion.dfiles.length[[yy]][[xx]]),
-##                             "session"=rep(matches[4],
-##                                           motion.dfiles.length[[yy]][[xx]]),
-##                             "task"=rep(names(motion.dfiles)[yy],
-##                                        motion.dfiles.length[[yy]][[xx]])
-##                             ))
-                
-##             } )
-##     }) %>%
-##     bind_rows()
 
 subject.session.pattern=".*/afni-((task-tapping)|(resting-state))/(sub-([[:alnum:]]*))/(ses-([[:alnum:]]*))/.*"
 subject.session.df <-
@@ -95,45 +70,68 @@ subject.session.df <-
         return(list("subject"=rep(matches[5], line.count),
                     "session"=rep(matches[8], line.count),
                     "task"   =rep(matches[2], line.count)))
-        
-    }) %>%
+    }, .progress=list(
+           type="iterator",
+           format = "Creating subject-session data frame {cli::pb_bar} {cli::pb_percent}",
+           clear = FALSE,
+           show_after=0)
+    ) %>%
     bind_rows() %>%
     mutate(across(c(subject, session, task), as.factor))
+subject.sessions.acquired.df=unique(subject.session.df[, c("subject", "session", "task")])
 
-## subject.session.df <-
-##     seq_along(motion.dfiles[["task-tapping"]]) %>%
-##     map(function(xx) {        
-##         ff=motion.dfiles[["task-tapping"]][xx]
-##         m=regexec(subject.session.pattern, ff)
-##         matches=regmatches(motion.dfiles[["task-tapping"]][xx], m)[[1]]
-##         return(list("subject"=rep(matches[2],
-##                                   motion.dfiles.length[["task-tapping"]][[xx]]),
-##                     "session"=rep(matches[4],
-##                                   motion.dfiles.length[["task-tapping"]][[xx]]),
-##                     "task"=rep(task,
-##                                 motion.dfiles.length[["task-tapping"]][[xx]])
-##                     ))
-        
-##     } ) %>%
-##     bind_rows()
+## the grep here is to discard the unwanted test01 subject
+info.message("Finding all 00_DO_NOT_ANALYSE files")
+donot_analyze.files=grep("test01",
+                   list.files(file.path(derivative.data,
+                                        paste0("afni-", c("task-tapping",
+                                                          "resting-state"))),
+                              full.names=TRUE, pattern="00_DO_NOT_ANALYSE.*", recursive=TRUE),
+                   invert=TRUE, value=TRUE)
 
+analyzable.pattern=".*/afni-((task-tapping)|(resting-state))/(sub-([[:alnum:]]*))/(ses-([[:alnum:]]*))/.*/00_DO_NOT_ANALYSE_.*"
+not.analyzable=
+    donot_analyze.files %>%
+     map(function(ff) {
+        m=regexec(subject.session.pattern, ff)
+        matches=regmatches(ff, m)[[1]]
+        return(list("subject"=matches[5],
+                    "session"=matches[8],
+                    "task"=matches[2],
+                    "analyzable"=FALSE))
+    }, .progress=list(
+           type="iterator",
+           format = "Creating not analyzable data frame {cli::pb_bar} {cli::pb_percent}",
+           clear = FALSE,
+           show_after=0)
+    ) %>%
+    bind_rows() %>%
+    mutate(across(c(subject, session, task), as.factor)) %>%
+    arrange(subject, session)
 
+analyzable.df=left_join(subject.sessions.acquired.df, not.analyzable) %>%
+    replace_na(list(analyzable=TRUE))
 
-# The motion 1D files produced by 3dvolreg are a special beast. They
-# use multiple space delimeters between each column. The first column
-# of each line contains a space. Consequently, only read_fwf from
-# readr can read these files and parse the lines correctly. Here we
-# use the fwf_empty function to guess the start end end columns of
-# each field start end end columns within a sample of 100 lines. It
-# appears to work very well.
+## The motion 1D files produced by 3dvolreg are a special beast. They
+## use multiple space delimeters between each column. The first column
+## of each line contains a space. Consequently, only read_fwf from
+## readr can read these files and parse the lines correctly. Here we
+## use the fwf_empty function to guess the start end end columns of
+## each field start end end columns within a sample of 100 lines. It
+## appears to work very well.
+info.message("Guessing column layout of motion dfiles")
 motion.dfile.col.positions=fwf_empty(motion.dfiles[1],
                                 col_names=c("roll", "pitch", "yaw", "dx", "dy", "dz"))
-
 motion.estimates.df <-
     motion.dfiles %>%
     map(read_fwf,
         col_positions=motion.dfile.col.positions,
-        col_types=paste(rep("d", 6), collapse="")) %>%
+        col_types=paste(rep("d", 6), collapse=""),
+        .progress=list(
+            type="iterator",
+            format = "Reading motion data files {cli::pb_bar} {cli::pb_percent}",
+            clear = FALSE,
+            show_after=0)) %>%
     bind_rows()
 
 motion.estimates.df=bind_cols(subject.session.df, motion.estimates.df)
@@ -144,7 +142,7 @@ motion.estimates.df=bind_cols(subject.session.df, motion.estimates.df)
 ## multiple summary functions. The vars(value) is used to get at teh
 ## value column which is created by the immediatly preceding call to
 ## pivot_longer
-
+info.message("Creating summary statistics from motion dfiles")
 conf.interval=0.95
 motion.estimates.summary.df=
     motion.estimates.df %>%
@@ -164,6 +162,7 @@ motion.estimates.summary.df=
             mad   =~ mad(.,    na.rm=TRUE)
         ))
 
+info.message("Graphing motion summary statistics")
 ## A theme for the graphs
 my.base.size=18
 my.theme=
@@ -213,13 +212,11 @@ motion.estimates.select.summary.df=
 library (nlme)
 library(emmeans)
 for (measurement in c("min", "mean", "max")) {
-    cat("################################################################################\n")
-    cat("### LME model for", measurement, "motion excursion\n")
-    cat("################################################################################\n")
+    cli_h1(paste("LME model for", measurement, "motion excursion"))
     
     motion.model=lme(data=motion.estimates.select.summary.df,
                      as.formula(paste(measurement, "session*task", sep="~")),
-                                random=~1|subject)
+                     random=~1|subject)
     print(anova(motion.model))
     emm=emmeans(motion.model, ~ session*task)
 
@@ -227,41 +224,3 @@ for (measurement in c("min", "mean", "max")) {
     print(pairs(emm, simple="task"))
     
 }
-
-
-
-
-
-
-
-
-
-## metric.subset.df=motion.estimates.summary.df %>%
-##     select(session, task, min, mean, max, median) %>%
-##     pivot_longer(min:median, names_to="metric")
-
-## motion.graph=
-##     metric.subset.df %>%
-##     ggplot(aes(session, value, color=task, group=task)) +
-##     geom_point(position=my.dodge) +
-##     geom_line(position=my.dodge) +
-##     geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-##                   position=my.dodge) +
-##     scale_color_brewer(name="Task", palette="Set1") +
-##     labs(x="Session", y="Summary Motion Metric Value") +
-##     ggtitle("Motion excursion") +
-##     facet_wrap(vars(metric), labeller=as_labeller(str_to_title))
-##     my.theme
-## print(motion.graph)
-
-    
-
-
-## motion.estimates.summary.df=
-## motion.estimates.df %>%
-##     group_by(subject, session, task) %>%
-##     pivot_longer(cols=roll:dz, names_to=NULL) %>%
-##      summarize_at(vars(value),
-##                   list(min=min, mean=mean, median=median, sd=sd,
-##                        max=max))
-    
