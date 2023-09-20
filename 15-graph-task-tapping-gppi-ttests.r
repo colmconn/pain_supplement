@@ -526,7 +526,7 @@ for (seed.name in seed.names) {
     info.message("Publication table")
     print(publication.table)
 
-    correlations.table=run.correlations(clusters.locations, rois.stats, data.table)
+    correlations.table=run.correlations(clusters.locations, rois.stats, data.table, make.graphs=TRUE)
     correlations.table.filename=file.path(derivative.data, sprintf("correlations.table.%s.tsv", infix))
     info.message("Saving correlations table to", correlations.table.filename)
     write_tsv(correlations.table, correlations.table.filename)
