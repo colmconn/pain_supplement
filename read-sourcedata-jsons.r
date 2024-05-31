@@ -21,6 +21,9 @@ cli_h1("Extracting metadata from DICOMs, and BIDS JSON and NIfTI files")
 json.files.glob="../sourcedata/sub-*/ses-*/*/*.json"
 ## json.files.glob="../../new.turmeric/sourcedata/sub-*/ses-*/*/*.json"
 json.files=grep("dcm2nii", Sys.glob(json.files.glob), invert=TRUE, value=TRUE)
+## keep only T1w, T2w, and bold siffixed files. This will eliminate
+## things like events and DWI etc
+json.files=grep("(T[12]w|bold)", json.files, value=TRUE)
 
 dicom.files.glob="../rawdata/sub-*/ses-*/*AHN*/HEADS_*/LOCALIZER_0001/*0001.0001*"
 dicom.files=grep("test", Sys.glob(dicom.files.glob), invert=TRUE, value=TRUE)
@@ -55,11 +58,14 @@ acq.dates.df=dicom.files %>%
     pivot_longer(cols=starts_with("ses-"), names_to="session", values_to="acquisition.date") %>%
     relocate(interval, .after=last_col())
 ## 137 followup and 147 followup contain 2 files that match the DICOM
-## patters, so just use unique to remove the duplicates
+## patterns, so just use unique to remove the duplicates
 
 ##                                                                                                                   other entities 
 ##                           subject ID         session ID         data type      subject ID       session ID optional   |    suffix           extension
-json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(sub-[[:alnum:]]+(_ses-[[:alnum:]]+)?)_(.*)_([[:alnum:]]+)\\.([[:alnum:]]+)"
+## json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(sub-[[:alnum:]]+(_ses-[[:alnum:]]+)?)_(.*)_([[:alnum:]]+)\\.([[:alnum:]]+)"
+##                                                                                               other entities 
+##                           subject ID         session ID         data type      subject ID          |   suffix           extension
+json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(sub-[[:alnum:]]+)_(.*)_([[:alnum:]]+)\\.([[:alnum:]]+)"
 ## json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(([[:alnum:]]+)-([[:alnum:]]+)_?)+_([[:alnum:]]+)\\.([[:alnum:]]+)"
 bids.df=json.files %>%
     map(function(ff) {
@@ -70,7 +76,7 @@ bids.df=json.files %>%
         ## this assumes that there are sessions within subject and
         ## that there is at least one BIDS entity to be matched by the
         ## entities group in the json.pattern regex. The regex is
-        ## coded such that session directories are mandatory and
+        ## coded such that subject directories are mandatory and
         ## session entities are optional
         rr=c("subject"=matches[2],
              "session"=matches[3],
@@ -101,10 +107,10 @@ bids.df=json.files %>%
            clear = FALSE,
            show_after=0)) %>%
     bind_rows() %>%
-    mutate(across(filename,  R.utils::getAbsolutePath)) %>%    
+    mutate(across(filename,  R.utils::getAbsolutePath)) %>%
+    mutate(across(c(run, echo), as.numeric)) %>%
     relocate(filename,       .after=last_col()) %>%
     relocate(c(suffix, ext), .before=filename)
-
 
 meta.data=bids.df %>%
     pull(filename) %>%
@@ -132,12 +138,16 @@ meta.data=bids.df %>%
 df=bids.df %>%
     left_join(acq.dates.df, by = join_by(subject, session)) %>%
     bind_cols(meta.data) %>%
-    select(!entities) %>%
+    select(!c(ses, entities, ext)) %>%
     relocate(interval, .before="data.type") %>%
     relocate(acquisition.date, .after="session") %>%
     relocate(filename, .after=last_col())
-
-df.filename="../derivative/r-pain-ratings/meta.data.RData"
+## set the interval for baseline =0
+## df[df$session=="ses-baseline", "interval"]=0
+df.filename="../derivative/r-pain-ratings/meta.data.RData.gz"
+if (! dir.exists(dirname(df.filename))) {
+    dir.create(dirname(df.filename))
+}
 info.message(paste("Saving meta data to", df.filename))
 
 pigz.save(df, file=df.filename, ncores=4, verbose=TRUE)
@@ -165,6 +175,7 @@ my.theme=
 
 
 ss=df %>%
+    filter(session=="ses-followup") %>%
     select(c(subject, interval)) %>%
     unique() %>%
     drop_na()
