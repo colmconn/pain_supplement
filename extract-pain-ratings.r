@@ -4,7 +4,7 @@ rm(list=ls())
 graphics.off()
 
 library(getopt)
-source("common.functions.r")
+source(file.path(dirname(get_Rscript_filename()), "common.functions.r"))
 
 ##########################################################################################################################################################################
 ### START OF FUNCTIONS ###################################################################################################################################################
@@ -119,7 +119,7 @@ process.log.file <- function(in.opt) {
         info.message(sprintf("[%02d] Reading logfile %s", run, logfiles[run]))
         
         logfile.con = file(logfiles[run], 'r')
-        on.exit(close(logfile.con))
+        ## on.exit(close(logfile.con))
         if (is.null(logfile.con)) {
             error.message("Failed to successfully open logfile. Quiting")
             stop()
@@ -167,7 +167,7 @@ process.log.file <- function(in.opt) {
                 next
             }
         } ## end of while (length(line <- readLines(logfile.con, n = 1, warn = FALSE)) > 0)
-
+        close(logfile.con)
     } ## end of for (logfile in logfiles) {
 
     regressor.df = as.data.frame(do.call(rbind, regressor.list))
