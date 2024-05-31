@@ -1,0 +1,198 @@
+{
+    "descriptions": [
+	{
+	"id": "task-rest",
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest", "echo-1"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "SeriesNumber": 8,
+	    "EchoNumber": "1"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+	{
+	"id": "task-rest",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest", "echo-2"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "SeriesNumber": 8,
+	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+	{
+	"id": "task-rest",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest", "echo-3"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr",
+	    "SeriesNumber": 8,
+	    "EchoNumber": "3"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+
+	
+	{
+	"id": "task-tapping",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1", "echo-1"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
+	    "EchoNumber": "1"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1", "echo-2"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
+	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1", "echo-3"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr",
+	    "EchoNumber": "3"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+
+
+	{
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2", "echo-1"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
+	    "EchoNumber": "1"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2", "echo-2"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
+	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"id": "task-tapping",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2", "echo-3"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr",
+	    "EchoNumber": "3"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+	{
+	"datatype": "fmap",
+	"suffix": "magnitude1",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"],
+	    "EchoNumber": "1"
+	}
+    },
+	{
+	"datatype": "fmap",
+	"suffix": "magnitude2",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"],
+	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["task-rest", "task-tapping"]
+	}
+    },
+
+	{
+	"datatype": "fmap",
+	"suffix": "phasediff",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "P", "ND", "PHASE"]
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["task-rest", "task-tapping"]
+	}
+	
+    },
+	
+	{
+	"datatype": "anat",
+	"suffix": "T1w",
+	"custom_entities": "rec-prescannorm",
+	"criteria": {
+	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND", "NORM", "FM5", "5", "FIL"]
+	},
+	"sidecar_changes": {
+	    "ProtocolName": "T1"
+	}	
+    },
+	{
+	"datatype": "anat",
+	"suffix": "T1w",
+	"custom_entities": "rec-noprescannorm",
+	"criteria": {
+	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND"]
+	},
+	"sidecar_changes": {
+	    "ProtocolName": "T1"
+	}	
+    },
+	{
+	"datatype": "anat",
+	"suffix": "T2w",
+	"criteria": {
+	    "SeriesDescription": "t2_space_sag_p4_iso*"
+	},
+	"sidecar_changes": {
+	    "ProtocolName": "T2"
+	}	
+	
+    }
+    ]
+}
