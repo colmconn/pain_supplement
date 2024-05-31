@@ -36,7 +36,7 @@ info_message_ln "List of tasks to be executed is stored in $taskFile"
 
 cat /dev/null > $taskFile
 
-seedFiles="gabbay-striatum-seeds.txt primary-sensory-cortex-seeds.txt fox-dmn-seeds.txt krienen-dlpfc-seeds.txt kelly-insula-seeds.txt goldapple-dlpfc-seeds.txt goldapple-dacc-mpfc-seeds.txt"
+seedFiles="thalamus-seeds.txt gabbay-striatum-seeds.txt primary-sensory-cortex-seeds.txt fox-dmn-seeds.txt krienen-dlpfc-seeds.txt kelly-insula-seeds.txt goldapple-dlpfc-seeds.txt goldapple-dacc-mpfc-seeds.txt"
 for seeds in ${seedFiles} ; do
     info_message_ln "Seed file: ${seeds}"
     for ss in ${subjects} ; do
