@@ -1,0 +1,118 @@
+{
+    "descriptions": [
+	{
+	"id": "id_task_rest",
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-rest"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_rest_2.5_iso_cmmr"
+	},
+	"sidecar_changes": {
+	    "TaskName": "rest"
+	}
+    },
+
+	
+	{
+	"id": "id_task_tapping_run_1",	
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-1"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run1_2.5_iso_cmmr"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+
+
+	{
+	"id": "id_task_tapping_run_2",		
+	"datatype": "func",
+	"suffix": "bold",
+	"custom_entities": ["task-tapping", "run-2"],
+	"criteria": {
+	    "SeriesDescription": "MB_3echo_run2_2.5_iso_cmmr"
+	},
+	"sidecar_changes": {
+	    "TaskName": "tapping"
+	}
+    },
+
+
+	{
+	"datatype": "fmap",
+	"suffix": "magnitude1",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND", "MAGNITUDE"],
+	    "EchoNumber": "1"
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["id_task_rest", "id_task_tapping_run_1", "id_task_tapping_run_2"]
+	}
+    },
+	{
+	"datatype": "fmap",
+	"suffix": "magnitude2",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND", "MAGNITUDE"],
+	    "EchoNumber": "2"
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["id_task_rest", "id_task_tapping_run_1", "id_task_tapping_run_2"]
+	}
+    },
+
+	{
+	"datatype": "fmap",
+	"suffix": "phasediff",
+	"criteria": {
+            "SeriesDescription": "gre_field_mapping_2.5mm",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "P", "ND", "PHASE"]
+	},
+	"sidecar_changes": {
+	    "IntendedFor": ["id_task_rest", "id_task_tapping_run_1", "id_task_tapping_run_2"]
+	}
+    },
+	
+	{
+	"datatype": "anat",
+	"suffix": "T1w",
+	"custom_entities": "rec-prescannorm",
+	"criteria": {
+	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND", "NORM", "FM5", "5", "FIL", "MAGNITUDE"]
+	},
+	"sidecar_changes": {
+	    "ProtocolName": "T1"
+	}	
+    },
+	{
+	"datatype": "anat",
+	"suffix": "T1w",
+	"custom_entities": "rec-noprescannorm",
+	"criteria": {
+	    "SeriesDescription": "T1 MPRAGE SAG ISO*",
+	    "ImageType": ["ORIGINAL", "PRIMARY", "M", "ND", "MAGNITUDE"]
+	},
+	"sidecar_changes": {
+	    "ProtocolName": "T1"
+	}	
+    },
+	{
+	"datatype": "anat",
+	"suffix": "T2w",
+	"criteria": {
+	    "SeriesDescription": "t2_space_sag_p4_iso*"
+	},
+	"sidecar_changes": {
+	    "ProtocolName": "T2"
+	}	
+	
+    }
+    ]
+}
