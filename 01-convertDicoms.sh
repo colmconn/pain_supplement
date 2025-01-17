@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+## set -x
 
 #exit immediatly on an error
 set -e 
@@ -80,15 +80,19 @@ if [[ ${subject:0:4} != "sub-" ]] ; then
     subject="sub-${subject}"
 fi
 
-if [[ -f ${CODE_DIR}/${subject}_${session}_dcm2bids_config.json]] ; then 
+if [[ -f ${CODE_DIR}/${subject}_${session}_dcm2bids_config.json ]] ; then 
     dcm2bids_config_file=${CODE_DIR}/${subject}_${session}_dcm2bids_config.json
 else
-    dcm2bids_config_file=${CODE_DIR}/dcm2bids_config.json
+    if [[ ${subject} =~ sub-10[0-9][0-9][0-9] ]] ; then
+	dcm2bids_config_file=${CODE_DIR}/dcm2bids_uofaz_config.json
+    else
+	dcm2bids_config_file=${CODE_DIR}/dcm2bids_fsu_config.json
+    fi
 fi
 dcm2bids \
     --dicom_dir ${RAW_DATA}/${subject}/${session}/*${dicom_dir_prefix}* \
     --participant ${subject} \
     --session ${session} \
     --output_dir ${SOURCE_DATA} \
-    --config ${dcm2bids_config_file}
-
+    --config ${dcm2bids_config_file} \
+    --force_dcm2bids --clobber
