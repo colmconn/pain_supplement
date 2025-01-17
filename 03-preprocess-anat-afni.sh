@@ -19,7 +19,7 @@ ROOT=${STUDY_ROOT:-/data/colmconn/$studyName}
 
 DATA=$ROOT/data
 SOURCE_DATA=$ROOT/sourcedata
-DERIVATIVE_DATA=$ROOT/derivative
+DERIVATIVE_DATA=$ROOT/derivatives
 PIPELINE_DIR=${DERIVATIVE_DATA}/afni-anat
 LOG_DIR=$ROOT/log
 CODE_DIR=${ROOT}/code
@@ -109,9 +109,10 @@ fi
 
 prefix=${subject}/${session}
 ss=${subject}_${session}
-queue=parallel.q
-nslots=${threads}
-pe="-pe smp ${nslots}"
+task=anat_afni_${subject}_${session}
+queue=localQ
+#nslots=${threads}
+#pe="-pe smp ${nslots}"
 
 info_message_ln "####################################################################################################"
 info_message_ln "### Subject: $subject Session: ${Session}"
@@ -176,13 +177,25 @@ if [[ $enqueue -eq 1 ]] ; then
     LOG_FILE=${LOG_DIR}/${ss}_preprocess-anat-afni.log
     info_message_ln "To see progress run: tail -f $LOG_FILE"
     rm -f ${LOG_FILE}
-    qsub -N ${subject}_${session}_anat -q ${queue} ${pe} ${holdJid} \
-	 -j y -m n -V \
-	 -wd $( pwd ) \
-	 -S /bin/bash -o ${LOG_FILE} ${anat_script}
+    # qsub -N ${subject}_${session}_anat -q ${queue} ${pe} ${holdJid} \
+    # 	 -j y -m n -V \
+    # 	 -wd $( pwd ) \
+    # 	 -S /bin/bash -o ${LOG_FILE} ${anat_script}
 
-    info_message_ln "Running qstat"
-    qstat -q ${queue}
+    sbatch --job-name ${task} \
+	   --partition ${queue} \
+	   --export=ALL \
+	   --mail-type=NONE \
+	   --chdir $( pwd ) \
+	   --output ${LOG_FILE} \
+	   --ntasks=1 \
+	   --cpus-per-task=${threads} \
+	   ${anat_script}
+	   
+
+    info_message_ln "Running squeue"
+    squeue -ar
+    ## qstat -q ${queue}
 
 else
     info_message_ln "Job *NOT* submitted for execution to queuing system."
