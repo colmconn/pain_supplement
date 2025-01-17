@@ -19,7 +19,7 @@ ROOT=${STUDY_ROOT:-/data/colmconn/$studyName}
 
 DATA=$ROOT/data
 SOURCE_DATA=$ROOT/sourcedata
-DERIVATIVE_DATA=$ROOT/derivative
+DERIVATIVE_DATA=$ROOT/derivatives
 LOG_DIR=$ROOT/log
 CODE_DIR=${ROOT}/code
 
@@ -91,7 +91,9 @@ fi
 prefix=${subjectNumber}/${session}
 ss=${subjectNumber}_${session}
 t1w=${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T1w.nii.gz
-t2w=${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T2w.nii.gz
+##t2w=${SOURCE_DATA}/${prefix}/anat/${ss}_rec-prescannorm_T2w.nii.gz
+## U of Az has no prescannorm or noprescannorm entities in the T2w files
+t2w=${SOURCE_DATA}/${prefix}/anat/${ss}_T2w.nii.gz
 freesurfer_script=${CODE_DIR}/run/${ss}_freesurfer.sh
 info_message_ln "Writing ${freesurfer_script}"
 
@@ -123,18 +125,24 @@ echo "FINISHED:  ${FULL_COMMAND_LINE}"
 EOF
 chmod +x ${freesurfer_script}
 if [[ $enqueue -eq 1 ]] ; then
-    q=parallel.q
-    pe=smp
+    task=run_freesurfer_cross_${subject}_${session}
+    queue=localQ
     info_message_ln "Submitting job for execution to queuing system"
-    LOG_FILE=${LOG_DIR}/${ss}_freesurfer.log
+    LOG_FILE=${LOG_DIR}/${ss}_freesurfer_cross.log
     info_message_ln "To see progress run: tail -f $LOG_FILE"
     rm -f ${LOG_FILE}
+    sbatch --job-name ${task} \
+	   --partition ${queue} \
+	   --export=ALL \
+	   --mail-type=NONE \
+	   --chdir $( pwd ) \
+	   --output ${LOG_FILE} \
+	   --ntasks=1 \
+	   --cpus-per-task=${threads} \
+	   ${freesurfer_script}
 
-    qsub -N ${ss}_freesurfer -q ${q} -pe ${pe} ${threads} -j y -m n -V \
-	 -wd $( pwd ) -o ${LOG_FILE} ${freesurfer_script}
-
-    info_message_ln "Running qstat"
-    qstat -q ${q}
+    info_message_ln "Running squeue"
+    squeue -ar
 
 else
     info_message_ln "Job *NOT* submitted for execution to queuing system."
