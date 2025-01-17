@@ -25,11 +25,15 @@ json.files=grep("dcm2nii", Sys.glob(json.files.glob), invert=TRUE, value=TRUE)
 ## things like events and DWI etc
 json.files=grep("(T[12]w|bold)", json.files, value=TRUE)
 
+## FSU site
 dicom.files.glob="../rawdata/sub-*/ses-*/*AHN*/HEADS_*/LOCALIZER_0001/*0001.0001*"
 dicom.files=grep("test", Sys.glob(dicom.files.glob), invert=TRUE, value=TRUE)
+## U of Az site
+dicom.files.glob="../rawdata/sub-*/ses-*/*AHN*/LOCALIZER_0001/*0001.0001*"
+dicom.files=c(dicom.files, grep("test", Sys.glob(dicom.files.glob), invert=TRUE, value=TRUE))
 
 ##                         subject ID         session ID                   subject ID    year       month      day        remainder
-dicom.pattern=".*/rawdata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/.*AHN.*/HEADS_(.*)/LOCALIZER_0001/.*0001\\.0001.*"
+dicom.pattern=".*/rawdata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/.*AHN.*(/HEADS_(.*))?/LOCALIZER_0001/.*0001\\.0001.*"
 ##dicom.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/AHN_PAIN_([[:alnum:]]+)_(.*)"
 
 acq.dates.df=dicom.files %>%
@@ -138,9 +142,12 @@ meta.data=bids.df %>%
 df=bids.df %>%
     left_join(acq.dates.df, by = join_by(subject, session)) %>%
     bind_cols(meta.data) %>%
+    mutate(site=if_else(str_detect(subject, "sub-10[0-9][0-9][0-9]"),
+                        "UofAz", "FSU"),
+           .after=session) %>%
     select(!c(ses, entities, ext)) %>%
     relocate(interval, .before="data.type") %>%
-    relocate(acquisition.date, .after="session") %>%
+    relocate(acquisition.date, .after="site") %>%
     relocate(filename, .after=last_col())
 ## set the interval for baseline =0
 ## df[df$session=="ses-baseline", "interval"]=0
