@@ -67,7 +67,7 @@ EOF
 ## the %P argument in printf prints the file's name with the name of
 ## the starting-point under which it was found removed.
 ## See https://man7.org/linux/man-pages/man1/find.1.html
-subjects=$( cd ${SOURCE_DATA}; find ./ -regex '.*sub-[0-9][0-9][0-9]/ses-[a-z]*' -printf "%P\n" )
+subjects=$( cd ${SOURCE_DATA}; find ./ -regex '.*sub-10[0-9][0-9][0-9]/ses-[a-z]*' -printf "%P\n" )
 
 if [[ ! -d ${CODE_DIR}/regressors/ ]] ; then
     mkdir -p ${CODE_DIR}/regressors/
@@ -85,7 +85,12 @@ for rr in $( seq 1 ${nRuns} ) ; do
      for ss in ${subjects} ; do
 	subject=${ss%%/*}
 	session=${ss##*/}
-	if [[ -f ${SOURCE_DATA}/${subject}/${session}/func/${subject}_${session}_task-tapping_run-${rr}_echo-1_bold.json ]] ; then 
+	if [[ ${subject} =~ sub-10[0-9][0-9][0-9] ]] ; then
+	    jsonFile=${SOURCE_DATA}/${subject}/${session}/func/${subject}_${session}_task-tapping_run-${rr}_bold.json
+	else
+	    jsonFile=${SOURCE_DATA}/${subject}/${session}/func/${subject}_${session}_task-tapping_run-${rr}_echo-1_bold.json
+	fi
+	if [[ -f ${jsonFile} ]] ; then
 	    make_bids_events_tsv ${subject} ${session} "tapping" ${rr} ${CODE_DIR}/regressors/task-tapping-married.1D
 	fi
      done
