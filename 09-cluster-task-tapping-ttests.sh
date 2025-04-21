@@ -21,7 +21,7 @@ ROOT=${MDD_ROOT:-/data/colmconn/${studyName}}
 
 DDATA=$ROOT/data
 SOURCE_DATA=$ROOT/sourcedata
-DERIVATIVE_DATA=$ROOT/derivative
+DERIVATIVE_DATA=$ROOT/derivatives
 TASK_PIPELINE_DIR=${DERIVATIVE_DATA}/afni-${task}
 PIPELINE_DIR=${DERIVATIVE_DATA}/afni-${ttests_task}
 LOG_DIR=$ROOT/log
