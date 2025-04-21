@@ -1,0 +1,3 @@
+{
+    "t1w": {"datatype": "anat", "suffix": "T1w", "reconstruction":"prescannorm"}
+}
