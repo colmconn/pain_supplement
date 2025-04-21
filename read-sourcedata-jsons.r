@@ -21,7 +21,7 @@ cli_h1("Extracting metadata from DICOMs, and BIDS JSON and NIfTI files")
 json.files.glob="../sourcedata/sub-*/ses-*/*/*.json"
 ## json.files.glob="../../new.turmeric/sourcedata/sub-*/ses-*/*/*.json"
 json.files=grep("dcm2nii", Sys.glob(json.files.glob), invert=TRUE, value=TRUE)
-## keep only T1w, T2w, and bold siffixed files. This will eliminate
+## keep only T1w, T2w, and bold suffixed files. This will eliminate
 ## things like events and DWI etc
 json.files=grep("(T[12]w|bold)", json.files, value=TRUE)
 
@@ -42,9 +42,16 @@ acq.dates.df=dicom.files %>%
         matches=regmatches(ff, m)[[1]]
         dcm=readDICOMFile(ff)
         acq.date=extractHeader(dcm$hdr, "AcquisitionDate")
-
+        ## institution.name=extractHeader(dcm$hdr, "InstitutionName")
+        
         c("subject"=matches[2],
           "session"=matches[3],
+          ## "site"=case_match(
+          ##     institution.name,
+          ##     "Florida State Univ. - College of Medicine" ~ "FSU",
+          ##     "University of Arizona" ~ "UA",
+          ##     .default= "UNKNOWN"
+          ## ),
           "acquisition.date"=acq.date
           )
     }, .progress=list(
@@ -69,7 +76,7 @@ acq.dates.df=dicom.files %>%
 ## json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(sub-[[:alnum:]]+(_ses-[[:alnum:]]+)?)_(.*)_([[:alnum:]]+)\\.([[:alnum:]]+)"
 ##                                                                                               other entities 
 ##                           subject ID         session ID         data type      subject ID          |   suffix           extension
-json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(sub-[[:alnum:]]+)_(.*)_([[:alnum:]]+)\\.([[:alnum:]]+)"
+json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(sub-[[:alnum:]]+)_(.*)_([[:alnum:]]+)\\.([.A-Za-z0-9]+)"
 ## json.pattern=".*/sourcedata/(sub-[[:alnum:]]+)/(ses-[[:alnum:]]+)/([[:alnum:]]+)/(([[:alnum:]]+)-([[:alnum:]]+)_?)+_([[:alnum:]]+)\\.([[:alnum:]]+)"
 bids.df=json.files %>%
     map(function(ff) {
@@ -120,7 +127,8 @@ meta.data=bids.df %>%
     pull(filename) %>%
     map(function(xx) {
         js.file=rjson::fromJSON(file=xx)
-        json.attrs=unlist(js.file[c("SliceThickness",
+        json.attrs=unlist(js.file[c("InstitutionName",
+                                    "SliceThickness",
                                     "RepetitionTime",
                                     "FlipAngle",
                                     "ReconMatrixPE",
@@ -137,27 +145,33 @@ meta.data=bids.df %>%
            clear = FALSE,
            show_after=0)) %>%
     bind_rows() %>%
-    mutate(across(c(SliceThickness:dk, SpacingBetweenSlices), as.numeric))
+    mutate(across(c(SliceThickness:dk, SpacingBetweenSlices), as.numeric)) %>%
+    mutate(site=case_match(InstitutionName,
+                           "Florida State Univ. - College of Medicine" ~ "FSU",
+                           "University of Arizona" ~ "UA")) %>%
+    select( ! InstitutionName)
 
-df=bids.df %>%
+    ## mutate(site=if_else(str_detect(subject, "sub-10[0-9][0-9][0-9]"),
+    ##                     "UA", "FSU"),
+    ##        .after=session) %>%
+
+all.meta.data.df=bids.df %>%
     left_join(acq.dates.df, by = join_by(subject, session)) %>%
     bind_cols(meta.data) %>%
-    mutate(site=if_else(str_detect(subject, "sub-10[0-9][0-9][0-9]"),
-                        "UofAz", "FSU"),
-           .after=session) %>%
     select(!c(ses, entities, ext)) %>%
+    relocate(site, .after="session") %>%
     relocate(interval, .before="data.type") %>%
     relocate(acquisition.date, .after="site") %>%
     relocate(filename, .after=last_col())
 ## set the interval for baseline =0
 ## df[df$session=="ses-baseline", "interval"]=0
-df.filename="../derivative/r-pain-ratings/meta.data.RData.gz"
+df.filename="../derivatives/functional-qc/meta.data.RData.gz"
 if (! dir.exists(dirname(df.filename))) {
     dir.create(dirname(df.filename))
 }
 info.message(paste("Saving meta data to", df.filename))
 
-pigz.save(df, file=df.filename, ncores=4, verbose=TRUE)
+pigz.save(all.meta.data.df, file=df.filename, ncores=4, verbose=TRUE)
 
 cli_h1("Interval between scans")
 my.base.size=16
@@ -181,7 +195,7 @@ my.theme=
         plot.title=element_text(size=my.base.size*1.2, vjust=1))
 
 
-ss=df %>%
+ss=all.meta.data.df %>%
     filter(session=="ses-followup") %>%
     select(c(subject, interval)) %>%
     unique() %>%
@@ -215,7 +229,7 @@ if (isTRUE(! is.na(Sys.getenv("DISPLAY", unset=NA)))) {
     dev.new(width=8, height=10, unit="in")
     print(interval.graph)
 }
-interval.graph.filename=file.path("../derivative/r-pain-ratings", "interval.graph.pdf")
+interval.graph.filename=file.path("../derivatives/functional-qc", "interval.graph.pdf")
 info.message(c("Saving", interval.graph.filename))
 ggsave(interval.graph.filename, interval.graph, width=8, height=8, units="in")
 
