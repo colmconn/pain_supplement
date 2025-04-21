@@ -19,7 +19,7 @@ ROOT=${STUDY_ROOT:-/data/colmconn/$studyName}
 DATA=$ROOT/data
 RAW_DATA=$ROOT/rawdata
 SOURCE_DATA=$ROOT/sourcedata
-DERIVATIVE_DATA=$ROOT/derivative
+DERIVATIVE_DATA=$ROOT/derivatives
 
 CODE_DIR=${ROOT}/code
 
