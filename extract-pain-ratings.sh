@@ -6,9 +6,9 @@ trap exit SIGHUP SIGINT SIGTERM
 
 . logger_functions.sh
 
-cat /dev/null > ../derivative/pain_ratings/pain_ratings.csv
-
-for ss in ../rawdata/sub-[0-9][0-9][0-9]/ses-{baseline,followup} ; do
+cat /dev/null > ../derivatives/r-pain-ratings/pain_ratings.csv
+echo "subject,session,task,run,rating,file.size,file" > ../derivatives/r-pain-ratings/pain_ratings.csv
+for ss in ../rawdata/sub-[0-9][0-9][0-9]/ses-{baseline,followup} ../rawdata/sub-[0-9][0-9][0-9][0-9][0-9]/ses-{baseline,followup} ; do
     subject=${ss##../rawdata/}
     subject=${subject%%/*}
     subject=${subject##sub-}
@@ -20,7 +20,7 @@ for ss in ../rawdata/sub-[0-9][0-9][0-9]/ses-{baseline,followup} ; do
 
     info_message_ln "Extracting ratings for sub-${subject}/ses-${session}"
     ./extract-pain-ratings.r -l "../rawdata/sub-${subject}/ses-${session}"'/beh/*/*.log' \
-    			     -o ../derivative/pain_ratings \
+    			     -o ../derivatives/r-pain-ratings \
     			     -s ${subject} \
      			     -e ${session}
 done
