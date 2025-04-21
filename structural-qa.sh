@@ -15,7 +15,7 @@ ROOT=${STUDY_ROOT:-/data/colmconn/$studyName}
 
 DATA=$ROOT/data
 SOURCE_DATA=$ROOT/sourcedata
-DERIVATIVE_DATA=$ROOT/derivative
+DERIVATIVE_DATA=$ROOT/derivatives
 LOG_DIR=$ROOT/log
 CODE_DIR=${ROOT}/code
 
@@ -33,7 +33,7 @@ export AFNI_MOTD_CHECK=NO
 export AFNI_NIFTI_TYPE_WARN=NO
 # export AFNI_CROSSHAIR_LINES=NO
 
-#export AFNI_LAYOUT_FILE=elvis
+export AFNI_LAYOUT_FILE=${CODE_DIR}/struct-qc-layout
 #subjects="311_A"
 
 ## subjects="$*"
@@ -48,62 +48,91 @@ export AFNI_NIFTI_TYPE_WARN=NO
 
 # plugout_drive  $NPB     
 
-subjects=$( find ${SOURCE_DATA} -maxdepth 1 -type d -name 'sub-[0-9][0-9][0-9]' | sed -e "s#${SOURCE_DATA}/##g" | sort ) 
+## subjects=$( find ${SOURCE_DATA} -maxdepth 1 -type d -name 'sub-[0-9]{3,5}' -o -name 'sub-[0-9][0-9][0-9][0-9][0-9]' | sed -e "s#${SOURCE_DATA}/##g" | sort ) 
+## sss=$( find  ${SOURCE_DATA} -maxdepth 2 -type d -name 'ses-*' | sed -e "s#${SOURCE_DATA}/##g" | sort )
+sc=$( echo ${sss} | wc -w )
+sss="sub-173/ses-baseline sub-173/ses-followup"
 
-header="subject,session,good,above,below"
-structuralQaFile=$(pwd)/structural-qa-$( date +"%Y%m%d" ).csv
-echo "${header}" > ${structuralQaFile}
+header="subject,session,orig_anat,brain_mask,MNI_brain"
+structuralQaFile=${DERIVATIVE_DATA}/qc-inspection/structural-qc-$( date +"%Y%m%d" ).csv
+#echo "${header}" > ${structuralQaFile}
 
 #for subject in $subjects ; do
-for subject in ${subjects}; do
-    for session in ses-baseline ses-followup ; do
-	if [[ -d ${DERIVATIVE_DATA}/afni-anat/${subject}/${session} ]] ; then
-	    
-	    ## can try derivative/afni-anat/${subject}/${session}
-	    
-	    echo "####################################################################################################"
-	    echo "### Subject: $subject Session: ${session}"
-	    echo "####################################################################################################"
 
-	    cd ${DERIVATIVE_DATA}/afni-anat/${subject}/${session}
+count=1
+for ss in ${sss} ; do
+    subject=${ss%%/*}
+    session=${ss##*/}
+    
+    ## can try derivative/afni-anat/${subject}/${session}
+    
+    echo "####################################################################################################"
+    echo $( printf "### %03d of %03d | Subject: %s Session: %s" ${count} ${sc} ${subject} ${session} )
+    echo "####################################################################################################"
+    
+    cd ${DERIVATIVE_DATA}/afni-anat/${subject}/${session}
+    
+    afni -q ${NPB} -noplugins -no_detach -yesplugouts  \
+	 -com "SWITCH_UNDERLAY anatU.${subject}_${session}.nii " \
+	 -com "OPEN_WINDOW A.axialimage    mont=3x3:15 ifrac=0.9 opacity=4" \
+	 -com "OPEN_WINDOW A.sagittalimage mont=3x3:10 ifrac=0.9 opacity=4" \
+	 -com "OPEN_WINDOW A.coronalimage  mont=3x3:10 ifrac=0.9 opacity=4" \
+	 -com "SET_XHAIRS OFF" 2> /dev/null  &
+    ## -com "SET_XHAIRS OFF" & ## 2> /dev/null &
+    sleep 5
 
-	    afni -q ${NPB} -noplugins -no_detach -yesplugouts  \
-		 -com "SWITCH_UNDERLAY anatSS.${subject}_${session}.nii" \
-		 -com "OPEN_WINDOW A.axialimage    opacity=9" \
-		 -com "OPEN_WINDOW A.sagittalimage opacity=9" \
-		 -com "OPEN_WINDOW A.coronalimage  opacity=9" &
-	    ## -com "SET_XHAIRS OFF" & ## 2> /dev/null &
-	    sleep 5
 
-	    echo "Is the skull stripped anatomy of good quality (Y/N)?"
-	    read quality
-	    quality=$( echo ${quality} | tr '[:lower:]' '[:upper:]' )
+    if command -v wmctrl &> /dev/null ; then
+	wmctrl -i -a $( wmctrl -l | grep colmconn@med51hp9t2 | awk '{print $1}' )
+    fi
+    
+    echo "Is the unifized anatomy of good quality (Y/N)?"
+    read anat_quality
+    quality=$( echo ${quality} | tr '[:lower:]' '[:upper:]' )
 
-	    if [[ ${quality} == "N" ]] ; then
-		plugout_drive $NPB \
-			      -com "SWITCH_UNDERLAY anat_cp.${subject}_${session}.nii" \
-			      -quit
-		
-		echo "Enter clipping plane at the top of the brain"
-		read above
-		echo "Enter clipping plane at bottom of the brain"
-		read below
+    plugout_drive ${NPB} \
+		  -com "SWITCH_OVERLAY anatSS.${subject}_${session}.nii" \
+		  -com "SEE_OVERLAY +"                                \
+		  -quit 2> /dev/null
+    echo "Is the skull stripped anatomy of good quality (Y/N)?"
+    read ss_quality
+    quality=$( echo ${quality} | tr '[:lower:]' '[:upper:]' )
 
-		qaline="${subject},${session},${quality},${above},${below}"
-		## @clip_volume -input $subject.anat+orig.HEAD -above $above -below $bottom
 
-	    else
-		qaline="${subject},${session},${quality},NA,NA"
-	    fi
-	    plugout_drive $NPB \
-			  -com "QUITT" \
-			  -quit
-	    echo
-	else
-	    qaline="${subject},${session},NO_SESSION,NA,NA"
-	fi
-	echo "${qaline}"  >> ${structuralQaFile}
-    done
+    plugout_drive ${NPB} \
+		  -com "SWITCH_UNDERLAY anatQQ.${subject}_${session}.nii " \
+		  -com "SEE_OVERLAY -"                                \
+		  -quit 2> /dev/null
+    echo "Is the MNI anatomy of good quality (Y/N)?"
+    read mni_quality
+    quality=$( echo ${quality} | tr '[:lower:]' '[:upper:]' )
+
+    
+    # if [[ ${quality} == "N" ]] ; then
+    #     plugout_drive $NPB \
+	# 		  -com "SWITCH_UNDERLAY anat_cp.${subject}_${session}.nii" \
+	# 		  -quit
+    
+    #     echo "Enter clipping plane at the top of the brain"
+    #     read above
+    #     echo "Enter clipping plane at bottom of the brain"
+    #     read below
+    
+    #     qaline="${subject},${session},${quality},${above},${below}"
+    #     ## @clip_volume -input $subject.anat+orig.HEAD -above $above -below $bottom
+    
+    # else
+    #     qaline="${subject},${session},${quality},NA,NA"
+    # fi
+    plugout_drive $NPB \
+		  -com "QUITT" \
+		  -quit
+    echo
+    ## else
+    qaline="${subject},${session},${anat_quality},${ss_quality},${mni_quality}"
+
+    #echo "${qaline}"  >> ${structuralQaFile}
+    (( count=count + 1 ))
 done
 echo "" >> ${structuralQaFile}
 
