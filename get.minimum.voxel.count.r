@@ -22,13 +22,13 @@ n.digits=6
 ### START OF FUNCTIONS ###################################################################################################################################################
 ##########################################################################################################################################################################
 
-sink.reset <- function(){
-    for(i in seq_len(sink.number())){
-        sink(NULL)
-    }
-}
+## sink.reset <- function(){
+##     for(i in seq_len(sink.number())){
+##         sink(NULL)
+##     }
+## }
 
-sink.reset()
+## sink.reset()
 
 
 help <- function () {
@@ -55,7 +55,7 @@ DESCRIPTION
 		Print verbose debugging output.
 	    
 	-n, --nn
-		The neighborhood side. Must be one of 1, 2, or 3.
+		The neighborhood size. Must be one of 1, 2, or 3.
 
 	-s, --side
 		The sidedness of the tests. Must be one of 1, 2, or
@@ -78,13 +78,13 @@ EXAMPLE
 	    get.minimum.voxel.count.r -n 1 -s 1 -p 0.01 -a 0.05 -c ./cc.NN1_1sided.1D 
 
 AUTHOR
-       Written by Colm G Connolly
+       Written by Colm G. Connolly
 
 REPORTING BUGS
        Report bugs to <>
 
 COPYRIGHT
-       Copyright © 2023 Colm G. Connolly.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+       Copyright © 2025 Colm G. Connolly.  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
        This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
 ", file=stdout())
 }
@@ -169,6 +169,19 @@ check.command.line.arguments <- function (opt) {
         cat(getopt(command.line.options.specification, usage=TRUE), file=stderr())    
         q(status=1)
     }
+
+    if (isTRUE(grepl(".niml", opt$csimfile, fixed=TRUE))) {
+        if (opt$debug)
+            cat("*** 3dClustSim file is a NIML file\n")
+        opt$is.niml=TRUE
+    } else if (isTRUE(grepl(".1D", opt$csimfile, fixed=TRUE))) {
+        if (opt$debug)
+            cat("*** 3dClustSim file is a 1D file\n")
+        opt$is.niml=FALSE
+    } else {
+        cat("Unknown 3dClustSim filename format\n")
+        q(status=1)
+    }
      
     return(opt)
 }
@@ -176,20 +189,13 @@ check.command.line.arguments <- function (opt) {
 print.options.summary <- function () {
     cat("*** Script name:", get_Rscript_filename(), "\n", file=stderr())
     cat("*** 3dClustSim output file:", opt$csimfile, "\n", file=stderr())
-    cat("*** Prefix is set to:", opt$prefix, "\n", file=stderr())
     cat("*** Neighbor hood size is set to:", opt$nn, "\n", file=stderr())
     cat("*** Side is set to:", opt$side, "\n", file=stderr())
     cat("*** Voxelwise p value (pthr) is set to:", opt$pthr, "\n", file=stderr())
     cat("*** Clusterwise p value (alpha) is set to:", opt$alpha, "\n", file=stderr())
 }
 
-## make.clustsim.file.name <- function () {
-##     ## cc.Grief.baseline.griefVsNeutral.CSim.NN1_1sided.1D 
-##     return(file.path(opt$session, sprintf("%s.CSim.NN%d_%ssided.1D", opt$prefix, opt$nn, opt$side)))
-## }
-
-
-read.clustsim.file <- function(clustsim.file) {
+read.1d.clustsim.file <- function(clustsim.file) {
     if (file.exists(clustsim.file)) {
         if(opt$debug)
             cat("*** Trying to read", clustsim.file, "\n", file=stderr())
@@ -197,7 +203,7 @@ read.clustsim.file <- function(clustsim.file) {
         cstim.conn = file(clustsim.file, "r")
 
         header.lines=readLines(con=cstim.conn, n=8)
-
+        
         if (opt$debug) {
 
             ## line 1: the 3dClustSim command line
@@ -259,7 +265,7 @@ read.clustsim.file <- function(clustsim.file) {
                     cat("*** Neighborhood size in 3dClustSim file (", nn, ") matches neighborhood size requested on command line (", opt$nn, ")\n", file=stderr())
                 }
             }
-        }
+        } ## end of if (opt$debug) {
 
         trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
@@ -297,6 +303,81 @@ read.clustsim.file <- function(clustsim.file) {
         }
         
         close(cstim.conn)
+    } else {
+        stop("*** No such file", clustsim.file, "\n")
+    }
+
+    return (table)
+}
+
+
+read.niml.clustsim.file <- function(clustsim.file) {
+    if (file.exists(clustsim.file)) {
+        if(opt$debug)
+            cat("*** Trying to read", clustsim.file, "\n", file=stderr())
+        
+        cstim.conn = file(clustsim.file, "r")
+        
+        header.lines=readLines(con=cstim.conn, n=14)
+        
+        ## header processing stuff goes here
+        pattern="<3dClustSim_NN([0-9])"
+        m = regexec(pattern, header.lines[1])
+        if (m[[1]][1] == -1) {
+            ## no match: this should not happen in a properly formatted 3dClustSim file
+            stop("The first line of the file output from 3dClustSim did not contain appropriate information about the neighborhood size.\n")
+        } else {
+            nn = regmatches(header.lines[1], m)[[1]][2]
+            if (nn != opt$nn) {
+                stop(sprintf("*** The first line of the file output from 3dClustSim file indicated that the neighborhood was %s but you asked for %s on the command line.\n", nn, opt$nn))
+            } else {
+                if (opt$debug)
+                    cat("*** Neighborhood size in 3dClustSim file (", nn, ") matches size requested on command line (", opt$nn, ")\n", file=stderr())
+            }
+        }
+
+        key.value.pattern='[[:space:]]*([_a-zA-Z0-9]*)="(.*)"[[:space:]]*'
+        ## the first 14 lines of a NIML file are the header contained
+        ## within <...> brackets, hence the hard coded 14 below. Lines
+        ## 2 to 14 inclusive are in key=value format
+        for (line.count in seq.int(2, 14, by=1)) {
+            m = regexec(key.value.pattern, header.lines[line.count])
+            if (m[[1]][1] == -1) {
+                cat(header.lines[line.count], "\n")
+                ## no match: this should not happen in a properly formatted 3dClustSim file
+                stop("Line", line.count, "of the file output from 3dClustSim did not match the key.value.pattern\n")
+            } else {
+                if (opt$debug)
+                    cat("KEY:", regmatches(header.lines[line.count], m)[[1]][2],
+                        "= VALUE:", regmatches(header.lines[line.count], m)[[1]][3], "\n")
+                if (regmatches(header.lines[line.count], m)[[1]][2] == "pthr" ) {
+                    table.row.names=standardize.number.format(
+                        unlist(
+                            strsplit(
+                                regmatches(header.lines[line.count], m)[[1]][3], ",", fixed=TRUE)))
+                }
+                if (regmatches(header.lines[line.count], m)[[1]][2] == "athr" ) {
+                    table.header=standardize.number.format(
+                        unlist(
+                            strsplit(
+                                regmatches(header.lines[line.count], m)[[1]][3], ",", fixed=TRUE)))
+                }
+            }
+        } ## end of for (line.count in seq.int(2, 14, by=1)) {
+        
+        ## remainder of file is the table
+        table=read.table(file=cstim.conn, header=FALSE, colClasses = "character", comment.char = "<")
+        ## set the table column names to be the list of corrected alpha values
+        colnames(table) = table.header
+        ## set the table row names to be the list of voxel-wise p values
+        rownames(table) = table.row.names
+        if (opt$debug) {
+            cat("*** The final 3dClustSim table is as follows:\n", file=stderr())
+            capture.output(print(table), file=stderr())
+        }
+        
+        close(cstim.conn)
+    
     } else {
         stop("*** No such file", clustsim.file, "\n")
     }
@@ -346,10 +427,10 @@ if (interactive()) {
     args=c(
         "-d",
         "-n", "1",
-        "-s", "1",
-        "-p", "0.015",
+        "-s", "bi",
+        "-p", "0.01",
         "-a", "0.05",
-        "-c", "/data/jain/preApril/Group.results/Grief/cc.Grief.baseline.griefVsNeutral.NN1_1sided.1D")
+        "-c", "../derivatives/afni-task-tapping-lmes-mt0.35-ex0.30/CStemp.NN1_bisided.niml")
     opt=process.command.line.options(args)
 } else {
     opt=process.command.line.options()
@@ -361,7 +442,11 @@ if (opt$debug)
     print.options.summary()
 
 ## csim.file.name=make.clustsim.file.name()
-cluster.volume.table=read.clustsim.file(opt$csimfile)
+if (opt$is.niml) {
+    cluster.volume.table=read.niml.clustsim.file(opt$csimfile)    
+} else {
+    cluster.volume.table=read.1d.clustsim.file(opt$csimfile)
+}
 min.cluster.size=get.number.of.voxels()
 
 cat(min.cluster.size, "\n")
