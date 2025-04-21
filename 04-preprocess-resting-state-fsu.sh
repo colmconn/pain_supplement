@@ -20,11 +20,20 @@ ROOT=${STUDY_ROOT:-/data/colmconn/$studyName}
 
 DATA=$ROOT/data
 SOURCE_DATA=$ROOT/sourcedata
-DERIVATIVE_DATA=$ROOT/derivative
+DERIVATIVE_DATA=$ROOT/derivatives
 ANAT_PIPELINE_DIR=${DERIVATIVE_DATA}/afni-anat
 PIPELINE_DIR=${DERIVATIVE_DATA}/afni-${task}
 LOG_DIR=$ROOT/log
 CODE_DIR=${ROOT}/code
+
+source ${HOME}/envs/tedana/bin/activate
+
+if ! command -v tedana &> /dev/null
+then
+    error_message_ln "The tedana command could not be found."
+    error_message_ln "Install it with pip install tedana."    
+    exit
+fi
 
 [[ ! -d ${LOG_DIR} ]] && mkdir -p ${LOG_DIR}
 
@@ -396,6 +405,15 @@ motionThreshold=${motionThreshold}
 outlierThreshold=${outlierThreshold}
 
 ## -tlrc_opts_at -init_xform AUTO_CENTER \\
+source ${HOME}/envs/tedana/bin/activate
+if ! command -v tedana &> /dev/null
+then
+    echo "The tedana command could not be found."
+    echo "Install it with pip install tedana."    
+    exit
+else
+    TEDANA=\$( which tedana )
+fi
 
 btemplate=MNI152_2009_template_SSW.nii.gz    
 tpath=\$( @FindAfniDsetPath \${btemplate} )
@@ -431,7 +449,7 @@ afni_proc.py -subj_id ${ss}									\\
 	     ${dsets_me_run_arg}									\\
              -echo_times ${echos[*]}									\\
 	     -combine_method m_tedana_OC 								\\
-	     -combine_tedana_path \${HOME}/.local/bin/tedana 						\\
+	     -combine_tedana_path \${TEDANA}		 						\\
 	     -combine_opts_tedana --fittype curvefit 							\\
              -tshift_interp -wsinc9                                  					\\
 	     -volreg_warp_final_interp wsinc5								\\
@@ -508,17 +526,24 @@ EOF
 chmod +x $outputScriptName
 ## note that the following is only relevant to the server and pass to the enqueue zero if on my mac
 if [[ $enqueue -eq 1 ]] ; then
-    q=parallel.q
-    pe=smp
+    queue=localQ
     info_message_ln "Submitting job for execution to queuing system"
 
     LOG_FILE=${LOG_DIR}/${ss}_preprocess-${task}.log
     info_message_ln "To see progress run: tail -f $LOG_FILE"
 
     rm -f ${LOG_FILE}
-    qsub -N ${task}-${ss} -q ${q} -pe ${pe} ${threads} -j y -m n -V -wd $( pwd )  -o ${LOG_FILE} $outputScriptName
-    info_message_ln "Running qstat"
-    qstat -q ${q}
+    sbatch --job-name ${task}_${ss} \
+	   --partition ${queue} \
+	   --export=ALL \
+	   --mail-type=NONE \
+	   --chdir $( pwd ) \
+	   --output ${LOG_FILE} \
+	   --ntasks=1 \
+	   --cpus-per-task=${threads} \
+	   ${outputScriptName}
+    info_message_ln "Running squeue"
+    squeue -ar
 else
     info_message_ln "Job *NOT* submitted for execution to queuing system."
     info_message_ln "Pass -q or --enqueue option to this script to do so."	
