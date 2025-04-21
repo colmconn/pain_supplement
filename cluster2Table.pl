@@ -82,7 +82,7 @@ foreach my $groupDir ( @groupDirs ) {
     print "Processing the clusters in " . basename($clusterFile) . " and writing ";
 
     my $clusterLocations = $clusterFile;
-    $clusterLocations =~ s/clusters\.table\.(.*)\.txt/clusters.locations.$1.csv/;
+    $clusterLocations =~ s/clusters\.table\.(.*)\.txt/clusters.names.$1.csv/;
 
     print basename($clusterLocations) . "\n";
 
@@ -207,13 +207,13 @@ sub annotateAnova() {
 
 	$location =~ s/Left/L/;
 	$location =~ s/Right/R/;
-	$location =~ s/Gyrus/Gy/;
+	## $location =~ s/Gyrus/Gy/;
 
 	# $location =~ s/Anterior Cingulate/ACC/;
 	# $location =~ s/Cingulate/Cing/;
 
-	$location =~ s/Superior/Sup/;
-	$location =~ s/Inferior/Inf/;
+	# $location =~ s/Superior/Sup/;
+	# $location =~ s/Inferior/Inf/;
 
 	# $location =~ s/Middle/Mid/;
 	# $location =~ s/Frontal/Fron/;
