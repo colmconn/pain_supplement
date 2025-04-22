@@ -596,9 +596,8 @@ echo "\${blurs[@]}   # err_reml ACF blur estimates" >> blur_est.\$subj.1D
 # generate quality control review scripts and HTML report
 
 # generate a review script for the unprocessed EPI data
-# (all echoes of all runs)
 gen_epi_review.py -script @epi_review.\$subj \\
-    -dsets pb00.\$subj.r*.e*.tcat+orig.HEAD
+    -dsets pb00.\$subj.r*.tcat+orig.HEAD
 
 # -------------------------------------------------
 # generate scripts to review single subject results
@@ -609,13 +608,10 @@ cat << END > out.ap_uvars.txt
   mot_limit          : \${motionThreshold}
   out_limit          : \${outlierThreshold}
   copy_anat          : anatSS.\${subj}+orig.HEAD
-  combine_method     : m_tedana_OC
   mask_dset          : mask_group+tlrc.HEAD
   template           : MNI152_2009_template_SSW.nii.gz
   ss_review_dset     : out.ss_review.\$subj.txt
-  echo_times         : 13.000 26.6000 40.2000
   max_4095_warn_dset : out.4095_warn.txt
-  reg_echo           : 2
   slice_pattern      : @${sliceTimesFilename}
   vlines_tcat_dir    : vlines.pb00.tcat
 END
