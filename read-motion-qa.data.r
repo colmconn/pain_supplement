@@ -281,64 +281,85 @@ analyze.demographics.stats <- function(in.df){
     cli_h1("Site")
 
     info.message("Sex")
-    sex.table=table(in.df[, c("site", "sex")])
+    sex.table=table(in.df[, c("site", "History.Gender")])
     sex.test=chisq.test(sex.table)
     sex.table=addmargins(sex.table)
     print(sex.table)
     print(sex.test)
 
     info.message("Race")
-    race.table=table(in.df[, c("site", "race")])
+    race.table=table(in.df[, c("site", "History.Race")])
     race.test=chisq.test(race.table)
     race.table=addmargins(race.table)
     print(race.table)
     print(race.test)
 
     info.message("Index Knee")
-    knee.table=table(in.df[, c("site", "knee")])
+    knee.table=table(in.df[, c("site", "Index.knee")])
     knee.test=chisq.test(knee.table)
     knee.table=addmargins(knee.table)
     print(knee.table)
     print(knee.test)
 
+    info.message("Marital.status")
+    marital.status.table=table(in.df[, c("site", "Marital.status")])
+    marital.status.test=chisq.test(marital.status.table)
+    marital.status.table=addmargins(marital.status.table)
+    print(marital.status.table)
+    print(marital.status.test)
+    
     info.message("Age")
-    age.var.test=var.test(age ~ site, in.df)
-    age.t.test=t.test(age ~ site, in.df)
+    age.var.test=var.test(History.Age ~ site, in.df)
+    age.t.test=t.test(History.Age ~ site, in.df)
     print(age.var.test)
     print(age.t.test)    
 
     info.message("Length of knee pain (months)")
-    pain.length.var.test=var.test(pain.length ~ site, in.df)
-    pain.length.t.test=t.test(pain.length ~ site, in.df)
+    pain.length.var.test=var.test(OAmonth ~ site, in.df)
+    pain.length.t.test=t.test(OAmonth ~ site, in.df)
     print(pain.length.var.test)
     print(pain.length.t.test)    
 
+    info.message("BMI")
+    bmi.var.test=var.test(bmi ~ site, in.df)
+    bmi.t.test=t.test(bmi ~ site, in.df)
+    print(bmi.var.test)
+    print(bmi.t.test)
+
+    
     cli_h1("Treatment Group")
 
     info.message("Sex")
-    sex.table=table(in.df[, c("group", "sex")])
+    sex.table=table(in.df[, c("group", "History.Gender")])
     sex.test=chisq.test(sex.table)
     sex.table=addmargins(sex.table)
     print(sex.table)
     print(sex.test)
 
     info.message("Race")
-    race.table=table(in.df[, c("group", "race")])
+    race.table=table(in.df[, c("group", "History.Race")])
     race.test=chisq.test(race.table)
     race.table=addmargins(race.table)
     print(race.table)
     print(race.test)
 
     info.message("Index Knee")
-    knee.table=table(in.df[, c("group", "knee")])
+    knee.table=table(in.df[, c("group", "Index.knee")])
     knee.test=chisq.test(knee.table)
     knee.table=addmargins(knee.table)
     print(knee.table)
     print(knee.test)
 
+    info.message("Marital.status")
+    marital.status.table=table(in.df[, c("group", "Marital.status")])
+    marital.status.test=chisq.test(marital.status.table)
+    marital.status.table=addmargins(marital.status.table)
+    print(marital.status.table)
+    print(marital.status.test)
+    
     info.message("Age")
     ## age.var.test=var.test(age ~ group, in.df)
-    age.lm.model=lm(age ~ group, in.df)
+    age.lm.model=lm(History.Age ~ group, in.df)
     age.aov.test=anova(age.lm.model)
     ## print(age.var.test)
     print(age.aov.test)    
@@ -347,12 +368,21 @@ analyze.demographics.stats <- function(in.df){
     print(pairs(emm, simple="group"))
 
     info.message("Length of knee pain (months)")
-    pain.length.lm.model=lm(pain.length ~ group, in.df)
+    pain.length.lm.model=lm(OAmonth ~ group, in.df)
     pain.length.aov.test=anova(pain.length.lm.model)
     ## print(pain.length.var.test
     print(pain.length.aov.test)    
 
     emm=emmeans(pain.length.lm.model, ~ "group")
+    print(pairs(emm, simple="group"))
+
+    info.message("BMI")
+    bmi.lm.model=lm(bmi ~ group, in.df)
+    bmi.aov.test=anova(bmi.lm.model)
+    ## print(pain.length.var.test
+    print(bmi.aov.test)
+
+    emm=emmeans(bmi.lm.model, ~ "group")
     print(pairs(emm, simple="group"))
 
 }    
@@ -427,13 +457,47 @@ if (file.exists(df.filename)) {
 show.graph=FALSE
 
 cli_h1("Reading demographics file")
-demographics=read_excel("../rawdata/R01\ supplement_MRI\ pt\ demographic.xlsx") %>%
-    mutate(ID=paste0("sub-", ID)) %>%
-    rename(subject=ID, age=Age, sex=Sex, race=Race,
-           pain.length="Length of knee pain (month)",
-           knee="Index knee",
-           group="Treatment group") %>%
-    select(!"Data collection site")
+## demographics=read_excel("../rawdata/R01\ supplement_MRI\ pt\ demographic.xlsx") %>%
+##     mutate(ID=paste0("sub-", ID)) %>%
+##     rename(subject=ID, age=Age, sex=Sex, race=Race,
+##            pain.length="Length of knee pain (month)",
+##            knee="Index knee",
+##            group="Treatment group") %>%
+##     select(!"Data collection site")
+
+demographics=read_excel("../rawdata/Excel data sheet_R01_20250422.xlsx",
+                        sheet="Sheet1")  %>%
+    rename(group = tx.group,
+           site = Site,
+           subject = ID,
+           Marital.status = `Marital status`,
+           Index.knee = `Index knee`) %>%
+    mutate(
+        subject=paste0("sub-", as.character(subject)),
+        group=factor(group,
+                     levels=c(0, 1, 2, 3),
+                     labels=c("sham", "experimental", "tDCS", "meditation")),
+        History.Gender=factor(
+            History.Gender,
+            levels=c(0, 1),
+            labels=c("male", "female")),
+        History.Race=factor(
+            History.Race,
+            levels=c(1, 2, 3, 4),
+            labels=c("Asian", "Black African American", "White", "Hispanic or Latino")),
+        Marital.status=factor(
+            Marital.status,
+            levels=c(1, 2, 3, 4, 5, 6, 7, 8),
+            labels=c("married", "widowed", "divorced",
+                     "separated", "never married", "living with partner",
+                     "refused", "unknown"))) %>%
+    mutate(bmi=History.Weight / History.Height^2 * 703,
+           .after=`History.Race`) %>%
+    mutate(subject=case_when(
+               site=="FSU" ~ str_replace(subject, "(sub-)(10)([0-9]{3})", "\\1\\3"),
+               .default = subject)) %>%
+    filter(site %in% c("FSU", "UA")) %>%
+    select(site:Index.knee, OAmonth)
 
 cli_h1("Reading motion data files")
 
@@ -474,7 +538,6 @@ graph.motion(motion.estimates.df,
              in.show.graph=show.graph)
 analyze.motion(motion.estimates.df)
 
-
 ##exclusion.lists=list()
 ##for (ex in c(0.1, 0.2, 0.3, 0.35, 0.4)) {
 ## ex=0.3
@@ -488,7 +551,7 @@ cli_h1(sprintf("Tabulating subjects excluded at more than %d%% of volumes motion
 out.ss_review.df=make.review.df(out.ss_review.files,
                                 excessive.motion.threshold.percentage,
                                 excessive.motion.threshold.fraction) %>%
-    left_join(demographics, by="subject") %>%
+    left_join(demographics, by=c("subject", "site")) %>%
     select(! c(`subject ID`))
 
 cli_h2("Finding columns with NAs")
@@ -539,7 +602,7 @@ exclusion.df=out.ss_review.df %>%
     mutate(site=if_else(str_detect(subject, "sub-10[0-9][0-9][0-9]"),
                         "UA", "FSU"),
            .after=subject) %>%
-    left_join(demographics, by="subject")
+    left_join(demographics, by=c("subject", "site"))
 
 included.subjects=exclusion.df %>%
     filter(exclude==FALSE) %>%
