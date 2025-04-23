@@ -484,12 +484,12 @@ demographics=read_excel("../rawdata/Excel data sheet_R01_20250422.xlsx",
         History.Race=factor(
             History.Race,
             levels=c(1, 2, 3, 4),
-            labels=c("Asian", "Black African American", "White", "Hispanic or Latino")),
+            labels=c("Asian", "Black.African.American", "White", "Hispanic.or.Latino")),
         Marital.status=factor(
             Marital.status,
             levels=c(1, 2, 3, 4, 5, 6, 7, 8),
             labels=c("married", "widowed", "divorced",
-                     "separated", "never married", "living with partner",
+                     "separated", "never.married", "living.with.partner",
                      "refused", "unknown"))) %>%
     mutate(bmi=History.Weight / History.Height^2 * 703,
            .after=`History.Race`) %>%
