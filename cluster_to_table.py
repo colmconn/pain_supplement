@@ -4,17 +4,6 @@ import optparse, os, re, subprocess, sys
 
 def setup_cmd_line_opts(args):
     parser = optparse.OptionParser()
-    parser.add_option('-s', '--space',
-                      action="store",
-                      type="string",
-                      dest='space',
-                      default="MNI",
-                      help='The space (e.g. MNI) of the input coordinates')
-    parser.add_option('-f', '--force',
-                      dest='force',
-                      default=False,
-                      action='store_true',
-                      help="Force overwriting of preexisting output files")    
     parser.add_option('-c', '--com',
                       dest='com',
                       default=True,
@@ -37,8 +26,6 @@ def setup_cmd_line_opts(args):
 
 def check_args(options, args):
     if options.verbose:
-        print(f"space => {options.space}")
-        print(f"force => {options.force}")
         print(f"com   => {options.com}")
         print(f"mi    => {options.mi}")    
         for ii, arg in enumerate(args):
