@@ -11,7 +11,7 @@ trap exit SIGHUP SIGINT SIGTERM
 
 studyName=pain_supplement
 task="task-tapping"
-lmes_task="${task}-lmes-mt0.25-ex0.30"
+lmes_task="${task}-lmes-mt0.35-ex0.30"
 
 PROGRAM_NAME=`basename $0`
 FULL_COMMAND_LINE="$( readlink -f $( dirname $0 ) )/$PROGRAM_NAME ${*}"
@@ -47,24 +47,25 @@ fi
 cd ${PIPELINE_DIR}
 ln -sf $tpath/$btemplate .
 first_stats_file=$( head -2 lme_data_table.tsv  | tail -1 | awk '{print $NF}' | awk -F"'" '{print $1}' )
-3dbucket -prefix Bmask $tpath/$btemplate'[Bmask]' $tpath/$btemplate 
+3dbucket -prefix Bmask $tpath/$btemplate'[Bmask]'
 3dresample -rmode NN -master ${first_stats_file} -input Bmask+tlrc -prefix Bmask_epi+tlrc 
 export OMP_NUM_THREADS=8
 
-3dLME \
+3dLMEr \
     -prefix session_by_intervention \
+    -mask Bmask_epi+tlrc.HEAD \
     -jobs ${OMP_NUM_THREADS} \
-    -model 'session*intervention' \
-    -ranEff '~1' \
-    -SS_type 3 \
-    -num_glt 7 \
-    -gltLabel 1 'sham-interv'     -gltCode 1 'intervention : 1*Sham -0.33*tDCS.only -0.33*Meditation.only -0.33*tDCS.and.Meditation' \
-    -gltLabel 2 'sham-tDCSOnly'   -gltCode 2 'intervention : 1*Sham -1*tDCS.only' \
-    -gltLabel 3 'sham-MedOnly'    -gltCode 3 'intervention : 1*Sham -1*Meditation.only' \
-    -gltLabel 4 'sham-tDCSAndMed' -gltCode 4 'intervention : 1*Sham -1*tDCS.and.Meditation' \
-    -gltLabel 5 'sham-Med'        -gltCode 5 'intervention : 1*Sham -0.50*Meditation.only -0.50*tDCS.and.Meditation' \
-    -gltLabel 6 'sham-tDCS'       -gltCode 6 'intervention : 1*Sham -0.50*tDCS.only -0.50*tDCS.and.Meditation' \
-    -gltLabel 7 'base-foll'       -gltCode 7 'session : 1*ses-baseline -1*ses-followup' \
+    -model 'session*intervention+bmi+Index.knee+(1|site/Subj)' \
+    -resid session_by_intervention_residuals  \
+    -qVars bmi \
+    -gltCode sham-interv           'intervention : 1*sham -0.33*tDCS -0.33*meditation -0.33*experimental' \
+    -gltCode sham-tDCS             'intervention : 1*sham -1*tDCS' \
+    -gltCode sham-meditationOnly   'intervention : 1*sham -1*meditation' \
+    -gltCode sham-experimental     'intervention : 1*sham -1*experimental' \
+    -gltCode sham-meditation       'intervention : 1*sham -0.50*meditation -0.50*experimental' \
+    -gltCode sham-tDCS             'intervention : 1*sham -0.50*tDCS -0.50*experimental' \
+    -gltCode knee                  'Index.knee   : 1*L -1*R' \
+    -gltCode base-foll             'session : 1*ses-baseline -1*ses-followup' \
     -dataTable @lme_data_table.tsv
     
     
