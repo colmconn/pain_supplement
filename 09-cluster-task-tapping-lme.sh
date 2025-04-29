@@ -11,7 +11,7 @@ trap exit SIGHUP SIGINT SIGTERM
 
 studyName=pain_supplement
 task="task-tapping"
-lme_task="${task}-lmes-mt0.25-ex0.30"
+lme_task="${task}-lmes-mt0.35-ex0.30"
 
 PROGRAM_NAME=`basename $0`
 FULL_COMMAND_LINE="$( readlink -f $( dirname $0 ) )/$PROGRAM_NAME ${*}"
@@ -112,6 +112,16 @@ function is_f_test {
     fi
 }
 
+function is_chi_sq_test {
+
+    f_regex='Chi-sq$'
+    if [[ ${1} =~ ${f_regex} ]] ; then
+	return 0
+    else
+	return 1
+    fi
+}
+
 function is_intercept {
 
     intercept_regex='.*Intercept.*'
@@ -164,6 +174,9 @@ info_message_ln "ACF data table file is: ${acfDataTableFilename}"
 statsFilename=session_by_intervention+tlrc.HEAD
 info_message_ln "LME statistics file is: ${statsFilename}"
 
+residualsFilename=session_by_intervention_residuals+tlrc.HEAD
+info_message_ln "LME residuals file is: ${residualsFilename}"
+
 csvFile=parameters.${statsFilename%%+*}.csv
 
 if [[ $overwrite -eq 1 ]] || [[ ! -f $csvFile ]] ; then 
@@ -185,16 +198,33 @@ nBrikLabels=${#brikLabels[@]}
 count=0
 while [ ${count} -lt ${nBrikLabels} ] ; do
     if is_f_test "${brikLabels[${count}]}" ; then
-	info_message_ln "ME  : ${count} of ${nBrikLabels}: ${brikLabels[${count}]}"
+	info_message_ln "ME(F)      : $(( count + 1 )) of ${nBrikLabels}: ${brikLabels[${count}]}"
+    elif is_chi_sq_test "${brikLabels[${count}]}" ; then
+	info_message_ln "ME(Chi Sq) : $(( count + 1 )) of ${nBrikLabels}: ${brikLabels[${count}]}"	     
     else
-	info_message_ln "GLT : ${count} of ${nBrikLabels}: ${brikLabels[${count}]}"
+	info_message_ln "GLT        : $(( count + 1 )) of ${nBrikLabels}: ${brikLabels[${count}]}"
     fi
     (( count = count + 1 ))
 done
 
 if [[ ! -f 3dClustSim.cmd ]] ; then
+    if [[ -f ${residualsFilename} ]] ; then
+	info_message_ln "Found a residuals data set. Estimating smoothing ACF from it"
+	mkdir files_acf
+	3dFWHMx \
+	    -detrend \
+	    -mask Bmask_epi+tlrc. \
+	    -ACF files_acf/out.3dfwhmx.resid.1D \
+	    ${residualsFilename} > blur.lme_residuals.1D
+	acf="$( tail -1 blur.lme_residuals.1D | awk '{print $1,$2,$3}' )"
+	info_message_ln "ACF parameters output by 3dFWHMx: ${acf}"
+    else
+	acf="$( cat lme_acf_data_table.tsv | awk '{print $1,$2,$3}' )"
+	info_message_ln "ACF parameters from lme_acf_data_table.tsv: ${acf}"	
+    fi
+
     info_message_ln "Running 3dClustSim to get probability table"
-    3dClustSim -mask Bmask_epi+tlrc -acf $( cat lme_acf_data_table.tsv ) -niml -prefix CStemp
+    3dClustSim -mask Bmask_epi+tlrc -acf ${acf} -niml -prefix CStemp
 else
     info_message_ln "Found existing 3dClustSim.cmd. Skipping run of 3dClustSim"
 fi
@@ -216,6 +246,12 @@ for (( count=0; count < ${nBrikLabels}; count++ )) ; do
 	statsBrikId=$( 3dinfo -label2index "${brikLabels[${count}]}" ${statsFilename} 2> /dev/null )
 	statsParameters=$( extract_stat_pars ${statsFilename} ${statsBrikId} )
 	statThreshold=$( cdf -p2t fift $pValue ${statsParameters} | sed 's/t = //' )
+    elif is_chi_sq_test "${brikLabels[${count}]}" ; then
+	info_message_ln "Got main effect Chi Sq test"
+	statsBrikLabel="${brikLabels[${count}]}"
+	statsBrikId=$( 3dinfo -label2index "${brikLabels[${count}]}" ${statsFilename} 2> /dev/null )
+	statsParameters=$( extract_stat_pars ${statsFilename} ${statsBrikId} )
+	statThreshold=$( cdf -p2t fict $pValue ${statsParameters} | sed 's/t = //' )
     else
 	info_message_ln "Got GLT test"
 	statsBrikLabel="${brikLabels[$(( count + 1 ))]}"	
@@ -223,7 +259,7 @@ for (( count=0; count < ${nBrikLabels}; count++ )) ; do
 	statsParameters="NA"
 	statThreshold=$( cdf -p2t fizt $pValue | sed 's/t = //' )
 	# skip the next subbrik label because it will be the z score
-	# associated with the current GLT contract subbrik
+	# associated with the current GLT contrast subbrik
 	(( count=count+1 ))
     fi
 
