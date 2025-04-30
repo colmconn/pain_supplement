@@ -140,6 +140,15 @@ get.stat.names <- function(in.filenames) {
     gsub("clusters.table.", "", gsub(".txt", "", basename(cluster.table.files)))
 }
 
+get.stat.type <- function(in.stat.name) {
+    aa=strsplit(stat.name, split="_", fixed=TRUE)[[1]][2]
+    aa=gsub("-", " ", aa, fixed=TRUE)
+    if (grepl("sq$", aa))
+        aa=paste0(aa, ".")
+
+    aa
+}
+
 make.roistats.filenames <- function(in.filenames, suffix) {
     dirnames=dirname(in.filenames)
     stat.names=get.stat.names(in.filenames)
@@ -180,10 +189,21 @@ title.labels <- function(in.labels) {
 }
 
 x.tick.labeller <- function (variable, values) {
-    if (variable=="session")
-        rr=capwords(gsub("ses-", "", values, fixed=TRUE))
-    else if (variable=="intervention")
-        rr=gsub("and", "+", gsub(".", " ", values, fixed=TRUE), fixed=TRUE)
+    if (variable=="session") {
+        ## rr=capwords(gsub("ses-", "", values, fixed=TRUE))
+        values[values %in% "ses-baseline"]="Pre-intervention"
+        values[values %in% "ses-followup"]="Post-intervention"
+        rr=values
+    }
+    else if (variable=="intervention") {
+        rr=gsub(".", " ", values, fixed=TRUE)
+        ll=values[! values %in% "tDCS"]
+        ll=capwords(ll)
+        ll=c(ll, values[values %in% "tDCS"])
+        rr=ll
+    }
+    else if (variable=="Index.knee")
+        rr=gsub("L", "Left", gsub("R", "Right", values, fixed=TRUE), fixed=TRUE)
     else        
         rr=values
 
@@ -195,7 +215,7 @@ x.tick.labeller <- function (variable, values) {
 make.dir <- function (in.dir) {
     if (! dir.exists(in.dir)) {
         info.message("Creating", in.dir)
-        dir.create(in.dir)
+        dir.create(in.dir, recursive=TRUE)
     }
 }
 
@@ -314,12 +334,15 @@ generate.graphs <- function(in.stat.name, in.roi.stats, in.cluster.names, in.gra
         graph.filename=file.path(in.graph.dir,
                                  paste0(gsub("Mean_", "", col, fixed=TRUE),
                                         "_",
-                                        in.cluster.names[ii], ".pdf"))
+                                        gsub("_$", "",
+                                             gsub("[ ()]+", "_",
+                                                  in.cluster.names[ii])),
+                                        ".pdf"))
         info.message("Saving graph to",  graph.filename)
         ggsave(graph.filename, graph, width=6, height=6)
         ## print(graph)
         ## stop()
-    }
+    } ## end of for (ii in seq.int(1, length(mean.cols))) {
 }
 
 
@@ -329,19 +352,20 @@ make.publication.table <- function(in.stat.name, in.cluster.table, in.roi.stats,
                                    in.com=TRUE, in.voxel.resolution=NULL) {
     if (in.com) {
         pub.table=tibble(
-            "Structure" =gsub("_", " ", gsub("^[RL][ _]", "", in.cluster.names)),
+            "Structure" =gsub("_", " ", gsub("^((R(ight)?)|(L(eft)?))[[:space:]]+", "", in.cluster.names)),
             "hemisphere"=gsub("[^RL]", "", substr(in.cluster.names, 1, 1)),
             round(in.cluster.table[, c("Volume", "CM RL", "CM AP", "CM IS")], 0))
     } else {
         pub.table=tibble(
-            "Structure" =gsub("_", " ", gsub("^[RL][ _]", "", in.cluster.names)),
+            "Structure" =gsub("_", " ", gsub("^((R(ight)?)|(L(eft)?))[[:space:]]+", "", in.cluster.names)),
             "hemisphere"=gsub("[^RL]", "", substr(in.cluster.names, 1, 1)),
             round(in.cluster.table[, c("Volume", "MI RL", "MI AP", "MI IS")], 0))
     }
 
     if (! is.null(in.voxel.resolution)) {
         pub.table=pub.table %>%
-            mutate("Volume (muL)" = Volume *  in.voxel.resolution, .after="Volume")
+            mutate("Volume (\U003BCL)" = Volume *  in.voxel.resolution, .after="Volume")
+##            mutate("Volume (muL)" = Volume *  in.voxel.resolution, .after="Volume")
     }
 
     roi.stats.summary=in.roi.stats %>%
@@ -424,9 +448,9 @@ preprocessed.data.dir="task-tapping-preprocessed-polortA-mt0.35-ex0.30-NL"
 lme.data.table.file=file.path(pipeline.dir, "lme_data_table.tsv")
 lme.data.table=read_tsv(lme.data.table.file)
 lme.data.table=lme.data.table %>%
-    mutate(across(all_of(c("Subj", "session", "site", "sex", "race", "knee")), as.factor))
+    mutate(across(all_of(c("Subj", "session", "site", "History.Gender", "History.Race", "Index.knee", "Marital.status")), as.factor))
 ## relevel the intervention factor so Sham appears left-most on graphs
-lme.data.table$intervention=relevel(factor(lme.data.table$intervention), ref="Sham")
+lme.data.table$intervention=relevel(factor(lme.data.table$intervention), ref="sham")
     
 cluster.table.glob=paste0(pipeline.dir, "/clusters.table*.txt")
 ## cluster.table.glob=paste0(pipeline.dir, "/clusters.table.session:intervention_F.txt")
@@ -445,9 +469,10 @@ cluster.names.files=make.cluster.names.files(cluster.table.files)
 
 ## final voxel resolution in microliters
 voxel.resolution=2.500000*2.500000*2.500000
-    
+
 for (count in seq.int(1, length(cluster.table.files))) {
     stat.name=names(cluster.table.files[count])
+    stat.type=get.stat.type(stat.name)
     cli_h1(paste("Creating graphs for the", stat.name, "statistic"))
 
     cluster.table=read.clusters.table(cluster.table.files[count])
@@ -457,10 +482,15 @@ for (count in seq.int(1, length(cluster.table.files))) {
     roi.stats.avg.stat.values=read.roi.stats.table(roi.stats.avg.stat.value.filenames[count])    
     
     ## add the Subj, session and site columns to roi.stats
-    roi.stats[, c("Subj", "session", "site", "intervention")] = lme.data.table[, c("Subj", "session", "site", "intervention")]
-    graph.dir=file.path(pipeline.dir, stat.name)
+    roi.stats = cbind(
+        roi.stats,
+        lme.data.table[, c("Subj", "session", "site", "intervention",
+                           "History.Gender", "History.Race",
+                           "Index.knee", "Marital.status")])
+    graph.dir=file.path(pipeline.dir, "graphs", stat.name)
     
-    if (stat.name=="session_F") {
+    if (stat.name %in% c("session_F", "session_Chi-sq")) {
+        stat.type=get.stat.type(stat.name)
         make.dir(graph.dir)
         parameters=list("x"             = "session",
                         "group"         = "session",
@@ -469,7 +499,7 @@ for (count in seq.int(1, length(cluster.table.files))) {
                         "shape.name"    = "Site:",
                         "color.name"    = "Session:",
                         "x.label"       = "Session",
-                        "y.label"       = "Beta Value",
+                        "y.label"       = expression("Average"~beta~"value"),
                         "color.labels"  = x.tick.labeller("session", levels(roi.stats$session)),
                         "shape.labels"  = x.tick.labeller("site", levels(roi.stats$site)),                                                
                         "x.tick.labels" = x.tick.labeller("session", levels(roi.stats$session))
@@ -488,11 +518,12 @@ for (count in seq.int(1, length(cluster.table.files))) {
                                in.group.vars="session",
                                in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
                                in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
-                               in.stat.column.name="Average F Value",
+                               in.stat.column.name=sprintf("Average %s Value", stat.type),
                                in.contrast.column.name="Average Contrast Value",
                                in.voxel.resolution=voxel.resolution
                                )
-    } else if (stat.name=="intervention_F") {
+    } else if (stat.name %in% c("intervention_F", "intervention_Chi-sq")) {
+        stat.type=get.stat.type(stat.name)
         make.dir(graph.dir)        
         parameters=list("x"             = "intervention",
                         "group"         = "intervention",
@@ -501,7 +532,7 @@ for (count in seq.int(1, length(cluster.table.files))) {
                         "shape.name"    = "Site:",
                         "color.name"    = "Intervention:",
                         "x.label"       = "Intervention",
-                        "y.label"       = "Beta Value",
+                        "y.label"       = expression("Average"~beta~"value"),
                         "color.labels"  = x.tick.labeller("intervention", levels(roi.stats$intervention)),
                         "shape.labels"  = x.tick.labeller("site", levels(roi.stats$site)),                        
                         "x.tick.labels" = x.tick.labeller("intervention", levels(roi.stats$intervention))                            
@@ -520,11 +551,45 @@ for (count in seq.int(1, length(cluster.table.files))) {
                                in.group.vars="intervention",
                                in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
                                in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
-                               in.stat.column.name="Average F Value",
+                               in.stat.column.name=sprintf("Average %s Value", stat.type),
                                in.contrast.column.name="Average Contrast Value",
                                in.voxel.resolution=voxel.resolution
                                )
-    } else if (stat.name=="session:intervention_F") {
+    } else if (stat.name %in% c("Index.knee_F", "Index.knee_Chi-sq")) {
+        stat.type=get.stat.type(stat.name)
+        make.dir(graph.dir)        
+        parameters=list("x"             = "Index.knee",
+                        "group"         = "Index.knee",
+                        "color"         = "Index.knee",
+                        "shape"         = "site",
+                        "shape.name"    = "Site:",
+                        "color.name"    = "Knee:",
+                        "x.label"       = "Knee",
+                        "y.label"       = expression("Average"~beta~"value"),
+                        "color.labels"  = x.tick.labeller("Index.knee", levels(roi.stats$Index.knee)),
+                        "shape.labels"  = x.tick.labeller("site", levels(roi.stats$site)),                        
+                        "x.tick.labels" = x.tick.labeller("Index.knee", levels(roi.stats$Index.knee))                            
+                        )
+        generate.graphs(stat.name,
+                        roi.stats,
+                        cluster.names,
+                        graph.dir,
+                        parameters
+                        )
+        make.publication.table(stat.name,
+                               cluster.table,
+                               roi.stats,
+                               cluster.names,
+                               graph.dir,
+                               in.group.vars="Index.knee",
+                               in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
+                               in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
+                               in.stat.column.name=sprintf("Average %s Value", stat.type),
+                               in.contrast.column.name="Average Contrast Value",
+                               in.voxel.resolution=voxel.resolution
+                               )
+    } else if (stat.name %in% c("session:intervention_F", "session:intervention_Chi-sq")) {
+        stat.type=get.stat.type(stat.name)        
         make.dir(graph.dir)        
         parameters=list("x"             = "intervention",
                         "group"         = c("session", "intervention"),
@@ -533,7 +598,7 @@ for (count in seq.int(1, length(cluster.table.files))) {
                         "shape.name"    = "Session:",
                         "color.name"    = "Session:",
                         "x.label"       = "Intervention",
-                        "y.label"       = "Beta Value",
+                        "y.label"       = expression("Average"~beta~"value"),
                         "color.labels"  = x.tick.labeller("session", levels(roi.stats$session)),                        
                         "shape.labels"  = x.tick.labeller("session",  levels(roi.stats$session)),
                         "x.tick.labels" = x.tick.labeller("intervention", levels(roi.stats$intervention))                            
@@ -552,36 +617,55 @@ for (count in seq.int(1, length(cluster.table.files))) {
                                in.group.vars=c("session", "intervention"),
                                in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
                                in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
-                               in.stat.column.name="Average F Value",
+                               in.stat.column.name=sprintf("Average %s Value", stat.type),
                                in.contrast.column.name="Average Contrast Value",
                                in.voxel.resolution=voxel.resolution
                                )
     } else if (grepl("sham", stat.name, fixed=TRUE)) {
 
+
+        ## these commented out statements are for use with the 3dLME script
+        ## ## sham-interv requires no filtering of the roi.stats data
+        ## ## frame so is absent from the if statement below
+        ## if (stat.name=="sham-tDCSOnly")
+        ##     roi.stats=roi.stats %>%
+        ##         filter(intervention  %in% c("Sham", "tDCS.only"))
+        ## else if (stat.name=="sham-MedOnly") 
+        ##     roi.stats=roi.stats %>%
+        ##         filter(intervention  %in% c("Sham", "Meditation.only"))
+        ## else if (stat.name=="sham-tDCSAndMed")
+        ##     roi.stats=roi.stats %>%
+        ##         filter(intervention  %in% c("Sham", "tDCS.and.Meditation"))
+        ## else if (stat.name=="sham-Med")
+        ##     roi.stats=roi.stats %>%
+        ##         filter(intervention  %in% c("Sham", "Meditation.only", "tDCS.and.Meditation"))
+        ## else if (stat.name=="sham-tDSC")
+        ##     roi.stats=roi.stats %>%
+        ##         filter(intervention  %in% c("Sham", "tDCS.only", "tDCS.and.Meditation"))
+
         ## sham-interv requires no filtering of the roi.stats data
         ## frame so is absent from the if statement below
-        if (stat.name=="sham-tDCSOnly")
+        if (stat.name=="sham-tDCS")
             roi.stats=roi.stats %>%
-                filter(intervention  %in% c("Sham", "tDCS.only"))
-        else if (stat.name=="sham-MedOnly") 
+                filter(intervention  %in% c("sham", "tDCS"))
+        else if (stat.name=="sham-meditationOnly") 
             roi.stats=roi.stats %>%
-                filter(intervention  %in% c("Sham", "Meditation.only"))
-        else if (stat.name=="sham-tDCSAndMed")
+                filter(intervention  %in% c("sham", "meditation"))
+        else if (stat.name=="sham-experimental")
             roi.stats=roi.stats %>%
-                filter(intervention  %in% c("Sham", "tDCS.and.Meditation"))
-        else if (stat.name=="sham-Med")
+                filter(intervention  %in% c("sham", "experimental"))
+        else if (stat.name=="sham-meditation")
             roi.stats=roi.stats %>%
-                filter(intervention  %in% c("Sham", "Meditation.only", "tDCS.and.Meditation"))
+                filter(intervention  %in% c("sham", "meditation", "experimental"))
         else if (stat.name=="sham-tDSC")
             roi.stats=roi.stats %>%
-                filter(intervention  %in% c("Sham", "tDCS.only", "tDCS.and.Meditation"))
-             
+                filter(intervention  %in% c("sham", "tDCS", "experimental"))
+        
         make.dir(graph.dir)     
         parameters=list("x"             = "intervention",
                         "group"         = c("intervention"),
                         "x.label"       = "Intervention",
-                        "y.label"       = "Beta Value",
-                        "shape.labels"  = x.tick.labeller("session",  levels(roi.stats$session)),
+                        "y.label"       = expression("Average"~beta~"value"),
                         "x.tick.labels" = x.tick.labeller("intervention", levels(roi.stats$intervention))                            
                         )
         generate.graphs(stat.name,
@@ -598,7 +682,7 @@ for (count in seq.int(1, length(cluster.table.files))) {
                                in.group.vars="intervention",
                                in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
                                in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
-                               in.stat.column.name="Average F Value",
+                               in.stat.column.name="Average Z Value",
                                in.contrast.column.name="Average Contrast Value",
                                in.voxel.resolution=voxel.resolution
                                )
@@ -607,8 +691,7 @@ for (count in seq.int(1, length(cluster.table.files))) {
         parameters=list("x"             = "session",
                         "group"         = "session",
                         "x.label"       = "Session",
-                        "y.label"       = "Beta Value",
-                        "shape.labels"  = x.tick.labeller("session",  levels(roi.stats$session)),
+                        "y.label"       = expression("Average"~beta~"value"),
                         "x.tick.labels" = x.tick.labeller("session", levels(roi.stats$session))                            
                         )
         generate.graphs(stat.name,
@@ -625,11 +708,38 @@ for (count in seq.int(1, length(cluster.table.files))) {
                                in.group.vars="session",
                                in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
                                in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
-                               in.stat.column.name="Average F Value",
+                               in.stat.column.name="Average Z Value",
                                in.contrast.column.name="Average Contrast Value",
                                in.voxel.resolution=voxel.resolution
                                )
+    }
+    else if (stat.name=="knee") {
+        make.dir(graph.dir)     
+        parameters=list("x"             = "Index.knee",
+                        "group"         = "Index.knee",
+                        "x.label"       = "Knee",
+                        "y.label"       = expression("Average"~beta~"value"),
+                        "x.tick.labels" = x.tick.labeller("Index.knee", levels(roi.stats$Index.knee))
+                        )
+        generate.graphs(stat.name,
+                        roi.stats,
+                        cluster.names,
+                        graph.dir,
+                        parameters
+                        )
+        make.publication.table(stat.name,
+                               cluster.table,
+                               roi.stats,
+                               cluster.names,
+                               graph.dir,
+                               in.group.vars="Index.knee",
+                               in.roi.stats.average.stat.value=roi.stats.avg.stat.values,
+                               in.roi.stats.average.contrast.value=roi.stats.avg.contrast.values,
+                               in.stat.column.name="Average Z Value",
+                               in.contrast.column.name="Average Contrast Value",
+                               in.voxel.resolution=voxel.resolution
+                               )        
     } else {
         info.message("Skipping creation of graphs and publication table for", stat.name)
-   }
-}
+    }
+} ## end of for (count in seq.int(1, length(cluster.table.files))) {
