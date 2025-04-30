@@ -342,4 +342,5 @@ for (( count=0; count < ${nBrikLabels}; count++ )) ; do
 done
 
 info_message_ln "Making cluster location tables using Center of Mass"
-${CODE_DIR}/cluster2Table.pl --space=mni --force ${PIPELINE_DIR}
+# ${CODE_DIR}/cluster2Table.pl --space=mni --force ${PIPELINE_DIR}
+${CODE_DIR}/cluster_to_table.py -c ${PIPELINE_DIR}/clusters.table.*.txt
